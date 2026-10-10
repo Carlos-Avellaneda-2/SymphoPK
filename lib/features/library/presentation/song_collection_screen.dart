@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../player/presentation/player_providers.dart';
 import '../domain/song.dart';
 import 'widgets/artwork_image.dart';
+import 'widgets/song_menu.dart';
 import 'widgets/song_tile.dart';
 
 /// Detalle de un conjunto de canciones (álbum o artista) con su carátula.
@@ -47,6 +48,7 @@ class SongCollectionScreen extends ConsumerWidget {
               song: songs[index],
               isCurrent: songs[index].id == currentId,
               onTap: () => handler.playSongs(songs, index: index),
+              trailing: SongMenuButton(song: songs[index]),
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 16)),

@@ -10,6 +10,7 @@ import 'library_providers.dart';
 import 'song_collection_screen.dart';
 import 'widgets/artwork_image.dart';
 import 'widgets/empty_state.dart';
+import 'widgets/song_menu.dart';
 import 'widgets/song_tile.dart';
 
 /// Biblioteca: buscador y pestañas de canciones, álbumes y artistas.
@@ -153,6 +154,7 @@ class SongListView extends ConsumerWidget {
         isCurrent: songs[index].id == currentId,
         onTap: () =>
             ref.read(audioHandlerProvider).playSongs(songs, index: index),
+        trailing: SongMenuButton(song: songs[index]),
       ),
     );
   }
