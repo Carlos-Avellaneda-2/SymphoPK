@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'core/permissions/permission_gate.dart';
 import 'core/theme/app_theme.dart';
+import 'features/home/home_shell.dart';
 
 class SymphoApp extends StatelessWidget {
   const SymphoApp({super.key});
@@ -14,9 +15,7 @@ class SymphoApp extends StatelessWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
-      home: const PermissionGate(
-        child: Scaffold(body: Center(child: Text('SymphoPK'))),
-      ),
+      home: const PermissionGate(child: HomeShell()),
     );
   }
 }

@@ -30,7 +30,17 @@ class AudioPermissionController extends AsyncNotifier<AudioPermissionStatus> {
 
   /// Relee el estado sin mostrar diálogos (p. ej. al volver de Ajustes).
   Future<void> refresh() async {
-    state = await AsyncValue.guard(_service.check);
+    final previous = state.value;
+    state = await AsyncValue.guard(() async {
+      final status = await _service.check();
+      // En Android `check` nunca informa de la negación permanente (solo lo
+      // hace `request`), así que se conserva la que ya conocíamos.
+      if (status == AudioPermissionStatus.denied &&
+          previous == AudioPermissionStatus.permanentlyDenied) {
+        return AudioPermissionStatus.permanentlyDenied;
+      }
+      return status;
+    });
   }
 
   Future<void> openSettings() => _service.openSettings();
