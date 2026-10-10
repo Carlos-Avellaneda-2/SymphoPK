@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../favorites/presentation/favorites_screen.dart';
 import '../library/presentation/library_screen.dart';
+import '../player/presentation/player_providers.dart';
 import '../player/presentation/widgets/mini_player.dart';
 import '../playlists/presentation/playlists_screen.dart';
 
 /// Estructura principal. El contenido vive en un `Navigator` anidado para
 /// que el mini reproductor y la barra inferior sigan visibles al entrar en
 /// un álbum, un artista o una lista.
-class HomeShell extends StatefulWidget {
+class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
   @override
-  State<HomeShell> createState() => _HomeShellState();
+  ConsumerState<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends ConsumerState<HomeShell> {
   final _navigatorKey = GlobalKey<NavigatorState>();
   final _tab = ValueNotifier<int>(0);
 
@@ -33,6 +35,9 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    // Mantiene viva la restauración y el guardado de la última sesión.
+    ref.listen(playbackSessionProvider, (_, _) {});
+
     return Scaffold(
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
