@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/formatters.dart';
 import '../domain/album.dart';
 import '../domain/artist.dart';
+import '../../player/presentation/player_providers.dart';
 import '../domain/song.dart';
 import 'library_providers.dart';
 import 'song_collection_screen.dart';
@@ -134,19 +135,25 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 }
 
 /// Lista de canciones; al tocar una se reproduce la lista desde ese punto.
-class SongListView extends StatelessWidget {
+class SongListView extends ConsumerWidget {
   const SongListView({super.key, required this.songs});
 
   final List<Song> songs;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentId = ref.watch(currentSongProvider.select((s) => s?.id));
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: 4, bottom: 16),
       itemCount: songs.length,
       itemExtent: 72,
-      itemBuilder: (context, index) => SongTile(song: songs[index]),
+      itemBuilder: (context, index) => SongTile(
+        song: songs[index],
+        isCurrent: songs[index].id == currentId,
+        onTap: () =>
+            ref.read(audioHandlerProvider).playSongs(songs, index: index),
+      ),
     );
   }
 }

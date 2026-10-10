@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../library/presentation/library_screen.dart';
+import '../player/presentation/widgets/mini_player.dart';
 
 /// Estructura principal. El contenido vive en un `Navigator` anidado para
 /// que los elementos fijos (mini reproductor, barra inferior) sigan visibles
@@ -18,6 +19,7 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const SafeArea(top: false, child: MiniPlayer()),
       body: NavigatorPopHandler<Object?>(
         // El botón atrás del sistema retrocede dentro del navegador anidado.
         onPopWithResult: (_) => _navigatorKey.currentState?.maybePop(),
