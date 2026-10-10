@@ -21,6 +21,23 @@ notificación multimedia y controles en la pantalla de bloqueo.
 - **Continuar donde lo dejaste**: recuerda la cola, la canción y la posición.
 - **Tema claro y oscuro** según el sistema, con Material 3.
 
+## Estado
+
+Primera versión (1.0.0). El MVP está completo y se ha ejecutado en un
+teléfono real con Android: el permiso, el escaneo de la biblioteca y las
+carátulas funcionan. El resto de comprobaciones que dependen del sistema
+están en [Qué hay que probar en un dispositivo real](#qué-hay-que-probar-en-un-dispositivo-real).
+
+Limitaciones conocidas:
+
+- La biblioteca lista archivos: si la misma canción está copiada dos veces
+  en el dispositivo, aparece dos veces.
+- Las canciones de una lista no se pueden reordenar desde la interfaz (la
+  cola de reproducción sí).
+- La carátula en la notificación solo se muestra en Android 10 o superior.
+- El APK de release se firma con la clave de depuración: sirve para uso
+  personal, no para publicar en Google Play.
+
 ## Requisitos
 
 | Herramienta | Versión |
@@ -39,6 +56,14 @@ de la plataforma queda aislado (ver [Arquitectura](#arquitectura)).
 ```bash
 flutter pub get
 flutter run            # con un dispositivo o emulador Android conectado
+```
+
+`flutter run` instala una versión de depuración, que sigue funcionando al
+desconectar el teléfono pero es más lenta y pesada. Para el uso diario
+conviene instalar la de release:
+
+```bash
+flutter run --release
 ```
 
 Otros comandos útiles:
@@ -125,7 +150,8 @@ lib/
     └── favorites/
         ├── data/              FavoritesRepository (Drift)
         └── presentation/      Pantalla y botón de favorito
-test/                          Tests de cola, repositorios, sesión, biblioteca y permisos
+test/                          Tests de cola, repositorios, sesión, biblioteca, permisos
+                               y pruebas de humo de las pantallas
 android/                       Proyecto Android: manifest con el servicio mediaPlayback y
                                MediaLibraryChannel.kt (lectura de MediaStore)
 ```
@@ -153,7 +179,9 @@ Decisiones a tener en cuenta:
 
 ## Qué hay que probar en un dispositivo real
 
-Los tests cubren la lógica, pero estas partes dependen del sistema:
+Los tests cubren la lógica, pero estas partes dependen del sistema. Ya está
+comprobado en un teléfono que la app pide el permiso, escanea la biblioteca
+y muestra las carátulas; lo siguiente sigue pendiente de una prueba manual:
 
 1. **Permisos**: en el primer arranque debe aparecer el diálogo. Al negarlo
    se muestra la pantalla explicativa; al negarlo dos veces, el botón pasa a
