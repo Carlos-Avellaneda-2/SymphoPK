@@ -28,6 +28,8 @@ class MiniPlayer extends ConsumerWidget {
         color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
+        elevation: 3,
+        shadowColor: Colors.black,
         child: InkWell(
           onTap: () => openPlayerScreen(context),
           child: Column(

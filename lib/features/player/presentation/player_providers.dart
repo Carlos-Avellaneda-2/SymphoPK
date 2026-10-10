@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:flutter/material.dart' show ColorScheme;
+
 import '../../../core/database/database_provider.dart';
+import '../../../core/theme/artwork_palette.dart';
 import '../../library/domain/song.dart';
 import '../../library/presentation/library_providers.dart';
 import '../data/playback_session_store.dart';
@@ -49,3 +52,15 @@ final playbackSessionProvider = FutureProvider<void>((ref) async {
 final positionProvider = StreamProvider<Duration>(
   (ref) => ref.watch(audioHandlerProvider).positionStream,
 );
+
+/// Esquema de color derivado de la carátula de la canción actual; `null`
+/// si no tiene carátula. Al cambiar de canción conserva el valor anterior
+/// hasta que el nuevo está listo.
+final playerColorSchemeProvider = FutureProvider<ColorScheme?>((ref) async {
+  final songId = ref.watch(currentSongProvider.select((song) => song?.id));
+  if (songId == null) return null;
+  final bytes = await ref
+      .watch(artworkRepositoryProvider)
+      .load(songId, size: 200);
+  return bytes == null ? null : colorSchemeFromArtwork(bytes);
+});

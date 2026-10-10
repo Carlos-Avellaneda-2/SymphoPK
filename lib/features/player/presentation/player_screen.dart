@@ -1,6 +1,10 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../favorites/presentation/favorite_button.dart';
 import '../../library/presentation/widgets/artwork_image.dart';
 import 'player_providers.dart';
@@ -37,14 +41,13 @@ Future<void> openPlayerScreen(BuildContext context) {
   );
 }
 
+/// Reproductor a pantalla completa. Siempre es oscuro y toma sus colores de
+/// la carátula de la canción actual.
 class PlayerScreen extends ConsumerWidget {
   const PlayerScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final song = ref.watch(currentSongProvider);
-
     // Si la cola se vacía con la pantalla abierta, no hay nada que mostrar.
     ref.listen(currentSongProvider, (_, next) {
       if (next == null && Navigator.of(context).canPop()) {
@@ -52,90 +55,208 @@ class PlayerScreen extends ConsumerWidget {
       }
     });
 
+    // Mientras se calcula la paleta de la nueva canción se conserva la
+    // anterior, así el cambio de color es una transición y no un parpadeo.
+    final scheme = ref.watch(playerColorSchemeProvider).value;
+    final theme = scheme == null
+        ? AppTheme.dark()
+        : AppTheme.fromScheme(scheme);
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: AnimatedTheme(
+        data: theme,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOut,
+        child: const _PlayerBody(),
+      ),
+    );
+  }
+}
+
+class _PlayerBody extends ConsumerWidget {
+  const _PlayerBody();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final song = ref.watch(currentSongProvider);
+    final playing = ref.watch(isPlayingProvider).value ?? false;
+
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-          child: Column(
-            children: [
-              Row(
+      backgroundColor: scheme.surface,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          _BlurredBackdrop(songId: song?.id),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+              child: Column(
                 children: [
-                  IconButton(
-                    tooltip: 'Cerrar',
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                    iconSize: 32,
+                  Row(
+                    children: [
+                      IconButton(
+                        tooltip: 'Cerrar',
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                        iconSize: 32,
+                      ),
+                      Expanded(
+                        child: Text(
+                          song?.album ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Cola de reproducción',
+                        onPressed: () => showQueueSheet(context),
+                        icon: const Icon(Icons.queue_music_rounded),
+                      ),
+                    ],
                   ),
                   Expanded(
-                    child: Text(
-                      song?.album ?? '',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        // La carátula se encoge un poco en pausa.
+                        child: AnimatedScale(
+                          scale: playing ? 1 : 0.9,
+                          duration: const Duration(milliseconds: 350),
+                          curve: Curves.easeOutCubic,
+                          child: AspectRatio(
+                            aspectRatio: 1,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(28),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.4),
+                                    blurRadius: 40,
+                                    spreadRadius: -4,
+                                    offset: const Offset(0, 20),
+                                  ),
+                                ],
+                              ),
+                              child: Hero(
+                                tag: artworkHeroTag,
+                                child: ArtworkImage(
+                                  songId: song?.id,
+                                  radius: 28,
+                                  resolution: ArtworkImage.full,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Cola de reproducción',
-                    onPressed: () => showQueueSheet(context),
-                    icon: const Icon(Icons.queue_music_rounded),
-                  ),
-                ],
-              ),
-              Expanded(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Hero(
-                      tag: artworkHeroTag,
-                      child: ArtworkImage(
-                        songId: song?.id,
-                        radius: 24,
-                        resolution: ArtworkImage.full,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 250),
+                          layoutBuilder: (current, previous) => Stack(
+                            alignment: Alignment.centerLeft,
+                            children: [...previous, ?current],
+                          ),
+                          child: Column(
+                            key: ValueKey(song?.id),
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                song?.title ?? '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                song?.artist ?? '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      FavoriteButton(songId: song?.id, size: 28),
+                    ],
                   ),
-                ),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          song?.title ?? '',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          song?.artist ?? '',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  FavoriteButton(songId: song?.id, size: 28),
+                  const SizedBox(height: 20),
+                  const SeekBar(),
+                  const SizedBox(height: 12),
+                  const TransportControls(),
                 ],
               ),
-              const SizedBox(height: 16),
-              const SeekBar(),
-              const SizedBox(height: 12),
-              const TransportControls(),
-            ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Fondo: la propia carátula muy difuminada y oscurecida con un degradado
+/// para que el texto mantenga contraste.
+class _BlurredBackdrop extends StatelessWidget {
+  const _BlurredBackdrop({required this.songId});
+
+  final int? songId;
+
+  @override
+  Widget build(BuildContext context) {
+    final surface = Theme.of(context).colorScheme.surface;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 600),
+          child: SizedBox.expand(
+            key: ValueKey(songId),
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(
+                sigmaX: 48,
+                sigmaY: 48,
+                tileMode: TileMode.decal,
+              ),
+              child: FittedBox(
+                fit: BoxFit.cover,
+                clipBehavior: Clip.hardEdge,
+                child: ArtworkImage(songId: songId, size: 200, radius: 0),
+              ),
+            ),
           ),
         ),
-      ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                surface.withValues(alpha: 0.55),
+                surface.withValues(alpha: 0.82),
+                surface.withValues(alpha: 0.96),
+              ],
+              stops: const [0, 0.55, 1],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

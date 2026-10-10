@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/widgets/pressable_scale.dart';
 import '../../domain/queue_state.dart';
 import '../player_providers.dart';
 
@@ -34,17 +35,21 @@ class PlayPauseButton extends ConsumerWidget {
     void onPressed() => playing ? handler.pause() : handler.play();
     final tooltip = playing ? 'Pausar' : 'Reproducir';
     if (!filled) {
-      return IconButton(onPressed: onPressed, tooltip: tooltip, icon: icon);
+      return PressableScale(
+        child: IconButton(onPressed: onPressed, tooltip: tooltip, icon: icon),
+      );
     }
-    return IconButton.filled(
-      onPressed: onPressed,
-      tooltip: tooltip,
-      style: IconButton.styleFrom(
-        backgroundColor: scheme.primary,
-        foregroundColor: scheme.onPrimary,
-        fixedSize: Size.square(size + 36),
+    return PressableScale(
+      child: IconButton.filled(
+        onPressed: onPressed,
+        tooltip: tooltip,
+        style: IconButton.styleFrom(
+          backgroundColor: scheme.primary,
+          foregroundColor: scheme.onPrimary,
+          fixedSize: Size.square(size + 36),
+        ),
+        icon: icon,
       ),
-      icon: icon,
     );
   }
 }
@@ -134,18 +139,22 @@ class TransportControls extends ConsumerWidget {
           onPressed: () => handler.setShuffle(!shuffle),
           icon: const Icon(Icons.shuffle_rounded),
         ),
-        IconButton(
-          tooltip: 'Anterior',
-          iconSize: 40,
-          onPressed: handler.skipToPrevious,
-          icon: const Icon(Icons.skip_previous_rounded),
+        PressableScale(
+          child: IconButton(
+            tooltip: 'Anterior',
+            iconSize: 40,
+            onPressed: handler.skipToPrevious,
+            icon: const Icon(Icons.skip_previous_rounded),
+          ),
         ),
         const PlayPauseButton(size: 40, filled: true),
-        IconButton(
-          tooltip: 'Siguiente',
-          iconSize: 40,
-          onPressed: handler.skipToNext,
-          icon: const Icon(Icons.skip_next_rounded),
+        PressableScale(
+          child: IconButton(
+            tooltip: 'Siguiente',
+            iconSize: 40,
+            onPressed: handler.skipToNext,
+            icon: const Icon(Icons.skip_next_rounded),
+          ),
         ),
         IconButton(
           tooltip: switch (repeat) {
