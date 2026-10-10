@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'audio_permission_service.dart';
@@ -18,14 +20,25 @@ class AudioPermissionController extends AsyncNotifier<AudioPermissionStatus> {
   @override
   Future<AudioPermissionStatus> build() async {
     final status = await _service.check();
-    if (status != AudioPermissionStatus.denied) return status;
+    if (status != AudioPermissionStatus.denied) return _onResolved(status);
     // Primer arranque: se muestra directamente el diálogo del sistema.
-    return _service.request();
+    return _onResolved(await _service.request());
   }
 
   /// Vuelve a mostrar el diálogo del sistema.
   Future<void> request() async {
-    state = await AsyncValue.guard(_service.request);
+    state = await AsyncValue.guard(
+      () async => _onResolved(await _service.request()),
+    );
+  }
+
+  /// Con la biblioteca ya accesible se pide el permiso de notificaciones,
+  /// que solo afecta a los controles multimedia y no bloquea la app.
+  AudioPermissionStatus _onResolved(AudioPermissionStatus status) {
+    if (status == AudioPermissionStatus.granted) {
+      unawaited(_service.requestNotifications());
+    }
+    return status;
   }
 
   /// Relee el estado sin mostrar diálogos (p. ej. al volver de Ajustes).

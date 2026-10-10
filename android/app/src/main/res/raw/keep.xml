@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- El icono de la notificación solo se referencia desde Dart; sin esto el
+     reductor de recursos lo eliminaría en release. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_notification" />

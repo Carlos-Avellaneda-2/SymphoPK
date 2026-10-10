@@ -1,5 +1,7 @@
 package com.carlosavellaneda.symphopk
 
-import io.flutter.embedding.android.FlutterActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 
-class MainActivity : FlutterActivity()
+// AudioServiceActivity reutiliza el FlutterEngine del servicio de audio, de
+// modo que la UI se reconecta a la reproducción en curso al reabrir la app.
+class MainActivity : AudioServiceActivity()

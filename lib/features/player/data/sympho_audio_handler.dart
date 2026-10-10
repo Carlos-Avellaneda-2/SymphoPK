@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -44,9 +45,20 @@ class SymphoAudioHandler extends BaseAudioHandler with SeekHandler {
 
   ValueStream<QueueState> get queueState => _queueState.stream;
 
+  /// Cola en su orden original, sin barajar (para persistirla).
+  List<Song> get originalQueue => _queue.originalOrder;
+
   Stream<Duration> get positionStream => _player.positionStream;
 
   Duration get position => _player.position;
+
+  /// Declara la app como reproductor de música ante el sistema. Con esta
+  /// configuración `just_audio` pausa en llamadas, baja el volumen ante
+  /// avisos breves y pausa al desconectar los auriculares.
+  Future<void> configureAudioSession() async {
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration.music());
+  }
 
   // ---------------------------------------------------------------------
   // Cola
