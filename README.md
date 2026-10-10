@@ -77,19 +77,20 @@ y después deslizar hacia abajo en la pestaña **Canciones** para reescanear.
 | `just_audio` | Motor de reproducción |
 | `audio_service` | Servicio en primer plano, notificación y botones multimedia |
 | `audio_session` | Foco de audio (llamadas, desconexión de auriculares) |
-| `on_audio_query_pluse` | Lectura de la biblioteca desde MediaStore |
 | `permission_handler` + `device_info_plus` | Permisos según la versión de Android |
 | `flutter_riverpod` | Gestión de estado |
 | `drift` + `drift_flutter` | Persistencia en SQLite |
 | `palette_generator_master` | Colores a partir de la carátula |
 | `google_fonts` | Tipografía Manrope |
 
-**Por qué `on_audio_query_pluse`**: consulta MediaStore, que ya tiene
-indexados título, artista, álbum, duración y carátula, así que no hay que
-recorrer el almacenamiento ni leer las etiquetas de cada archivo. El paquete
-original `on_audio_query` no se actualiza desde 2023; este fork sigue
-publicando versiones. Como su uso es minoritario, queda detrás de la interfaz
-`LibraryScanner`: sustituirlo solo afecta a un archivo.
+**Lectura de la biblioteca**: no se usa ningún paquete. `MediaLibraryChannel.kt`
+consulta MediaStore, que ya tiene indexados título, artista, álbum, duración
+y carátula, y lo expone a Dart por un canal de plataforma; así no hay que
+recorrer el almacenamiento ni leer las etiquetas de cada archivo. Se probó
+`on_audio_query_pluse` (el fork mantenido de `on_audio_query`), pero exige
+el permiso de fotos además del de audio y falla si no se concede. El acceso
+queda detrás de la interfaz `LibraryScanner`, así que añadir iOS o cambiar
+de implementación solo afecta a un archivo.
 
 ## Arquitectura
 
@@ -125,7 +126,8 @@ lib/
         ├── data/              FavoritesRepository (Drift)
         └── presentation/      Pantalla y botón de favorito
 test/                          Tests de cola, repositorios, sesión, biblioteca y permisos
-android/                       Proyecto Android (manifest con el servicio mediaPlayback)
+android/                       Proyecto Android: manifest con el servicio mediaPlayback y
+                               MediaLibraryChannel.kt (lectura de MediaStore)
 ```
 
 Decisiones a tener en cuenta:
@@ -137,7 +139,7 @@ Decisiones a tener en cuenta:
   en cada arranque. Listas, favoritos y la última sesión guardan solo ids; si
   una canción se borra del dispositivo simplemente deja de aparecer.
 - **Preparado para iOS**: lo específico de Android está en
-  `OnAudioQueryScanner`, `AudioPermissionService` y la carpeta `android/`.
+  `MediaStoreScanner`, `AudioPermissionService` y la carpeta `android/`.
 
 ## Permisos de Android
 

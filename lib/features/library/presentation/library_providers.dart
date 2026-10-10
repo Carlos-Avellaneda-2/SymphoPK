@@ -2,14 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/artwork_repository.dart';
 import '../data/library_scanner.dart';
-import '../data/on_audio_query_scanner.dart';
+import '../data/media_store_scanner.dart';
 import '../domain/album.dart';
 import '../domain/artist.dart';
 import '../domain/library_grouping.dart';
 import '../domain/song.dart';
 
 final libraryScannerProvider = Provider<LibraryScanner>(
-  (ref) => OnAudioQueryScanner(),
+  (ref) => MediaStoreScanner(),
 );
 
 final artworkRepositoryProvider = Provider<ArtworkRepository>(

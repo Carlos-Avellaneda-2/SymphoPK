@@ -17,7 +17,6 @@ dependencies:
   audio_session: ^0.2.4
 
   # Biblioteca y permisos
-  on_audio_query_pluse: ^3.0.7
   permission_handler: ^13.0.2
   device_info_plus: ^13.3.0
 
