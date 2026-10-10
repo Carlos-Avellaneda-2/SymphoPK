@@ -1,0 +1,45 @@
+name: symphopk
+description: "Reproductor de música local para Android."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Audio
+  just_audio: ^0.10.6
+  audio_service: ^0.18.19
+  audio_session: ^0.2.4
+
+  # Biblioteca y permisos
+  on_audio_query_pluse: ^3.0.7
+  permission_handler: ^13.0.2
+  device_info_plus: ^13.3.0
+
+  # Estado y persistencia
+  flutter_riverpod: ^3.4.3
+  drift: ^2.35.2
+  drift_flutter: ^0.3.1
+  path_provider: ^2.1.6
+  path: ^1.9.1
+  rxdart: ^0.28.0
+
+  # UI
+  google_fonts: ^9.0.0
+  palette_generator_master: ^1.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  drift_dev: ^2.35.1
+  build_runner: ^2.16.2
+  mocktail: ^1.0.5
+
+flutter:
+  uses-material-design: true
