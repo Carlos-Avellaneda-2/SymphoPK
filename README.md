@@ -4,6 +4,15 @@ Reproductor de música local para Android hecho con Flutter. Escanea el audio
 almacenado en el dispositivo y lo reproduce con soporte de segundo plano,
 notificación multimedia y controles en la pantalla de bloqueo.
 
+## Descarga
+
+El APK de cada versión está en la página de
+[Releases](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/latest).
+Descárgalo en el teléfono y ábrelo; Android pedirá permitir la instalación
+desde orígenes desconocidos. Requiere Android 7.0 o superior y se instala
+encima de versiones anteriores conservando listas, favoritos y la última
+sesión.
+
 ## Funcionalidades
 
 - **Biblioteca**: todas las canciones, vistas por carpeta, por álbum y por
@@ -26,13 +35,46 @@ notificación multimedia y controles en la pantalla de bloqueo.
 - **Continuar donde lo dejaste**: recuerda la cola, la canción y la posición.
 - **Tema claro y oscuro** según el sistema, con Material 3.
 
+## Uso
+
+### Carpetas
+
+La pestaña **Carpetas** de la biblioteca recorre el almacenamiento como un
+explorador de archivos. Empieza en la primera carpeta donde la música se
+ramifica (normalmente `Music`) y solo muestra carpetas que contienen
+canciones, directamente o más adentro.
+
+- Tocar una carpeta entra en ella; primero aparecen sus subcarpetas y
+  después sus canciones, ordenadas por título.
+- Los botones de la barra superior reproducen **toda** la carpeta,
+  subcarpetas incluidas, en orden o en aleatorio.
+- Tocar una canción reproduce solo las canciones de esa carpeta.
+
+### Widgets
+
+Mantén pulsada la pantalla de inicio, entra en **Widgets** y busca
+SymphoPK. Hay dos tamaños:
+
+| Widget | Contenido |
+| --- | --- |
+| 4×1 | Carátula, título, artista y controles en una fila |
+| 3×2 | Carátula grande, título, artista y controles |
+
+Los botones (anterior, play/pausa, siguiente) actúan sobre la música en
+curso sin abrir la app. Tocar la carátula o el texto abre SymphoPK.
+
 ## Estado
 
-Versión 1.2.0. Añade la navegación anidada por carpetas y los widgets de la
-pantalla de inicio. El MVP está completo y se ha ejecutado en un
-teléfono real con Android: el permiso, el escaneo de la biblioteca y las
-carátulas funcionan. El resto de comprobaciones que dependen del sistema
-están en [Qué hay que probar en un dispositivo real](#qué-hay-que-probar-en-un-dispositivo-real).
+Versión actual: **1.2.0**. Se ha ejecutado en un teléfono real con Android:
+el permiso, el escaneo de la biblioteca y las carátulas funcionan. El resto
+de comprobaciones que dependen del sistema están en
+[Qué hay que probar en un dispositivo real](#qué-hay-que-probar-en-un-dispositivo-real).
+
+| Versión | Cambios |
+| --- | --- |
+| [1.2.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.2.0) | Navegación anidada por carpetas y widgets de pantalla de inicio (4×1 y 3×2) |
+| [1.1.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.1.0) | Vista de la biblioteca por carpetas |
+| [1.0.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.0.0) | Primera versión: biblioteca, reproductor, segundo plano, listas, favoritos y sesión |
 
 Limitaciones conocidas:
 
@@ -175,8 +217,17 @@ Decisiones a tener en cuenta:
 - **Las canciones no se guardan en la base de datos**: se leen de MediaStore
   en cada arranque. Listas, favoritos y la última sesión guardan solo ids; si
   una canción se borra del dispositivo simplemente deja de aparecer.
+- **Las carpetas se derivan de la ruta de cada archivo**: `buildFolderTree`
+  construye el árbol con funciones puras a partir de la lista de canciones;
+  no se recorre el almacenamiento.
+- **Los widgets son nativos** (`AppWidgetProvider` y `RemoteViews`).
+  `PlayerWidgetSync` les envía la canción y el estado por un canal de
+  plataforma y ejecuta las órdenes de sus botones. El enlace nativo vive
+  mientras exista el motor de Flutter, no la actividad, por eso funcionan
+  con la música en segundo plano.
 - **Preparado para iOS**: lo específico de Android está en
-  `MediaStoreScanner`, `AudioPermissionService` y la carpeta `android/`.
+  `MediaStoreScanner`, `AudioPermissionService`, `PlayerWidgetSync` y la
+  carpeta `android/`.
 
 ## Permisos de Android
 
