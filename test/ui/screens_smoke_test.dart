@@ -12,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:symphopk/core/permissions/permission_gate.dart';
@@ -28,7 +27,12 @@ import 'package:symphopk/features/home/home_shell.dart';
 import 'package:symphopk/features/library/data/library_scanner.dart';
 import 'package:symphopk/features/library/domain/song.dart';
 import 'package:symphopk/features/library/presentation/library_providers.dart';
+import 'package:symphopk/core/database/database_provider.dart';
+import 'package:symphopk/features/lyrics/data/lyrics_disk_cache.dart';
+import 'package:symphopk/features/lyrics/data/lyrics_folder_access.dart';
 import 'package:symphopk/features/lyrics/data/lyrics_repository.dart';
+import 'package:symphopk/features/settings/data/app_preferences.dart';
+import 'package:symphopk/features/settings/presentation/settings_screen.dart';
 import 'package:symphopk/features/lyrics/domain/lyrics.dart';
 import 'package:symphopk/features/lyrics/presentation/lyrics_providers.dart';
 import 'package:symphopk/features/player/data/sympho_audio_handler.dart';
@@ -37,6 +41,10 @@ import 'package:symphopk/features/player/presentation/player_providers.dart';
 import 'package:symphopk/features/player/presentation/player_screen.dart';
 import 'package:symphopk/features/playlists/domain/playlist.dart';
 import 'package:symphopk/features/playlists/presentation/playlist_providers.dart';
+
+import '../support/memory_key_value_store.dart';
+
+class _MockDiskCache extends Mock implements LyricsDiskCache {}
 
 class _MockHandler extends Mock implements SymphoAudioHandler {}
 
@@ -120,6 +128,8 @@ void main() {
   final shotKey = GlobalKey();
   late List<Uint8List> covers;
   late _MockHandler handler;
+  late MemoryKeyValueStore store;
+  late _MockDiskCache diskCache;
 
   setUpAll(() async {
     registerFallbackValue(Duration.zero);
@@ -128,6 +138,9 @@ void main() {
 
   setUp(() {
     handler = _MockHandler();
+    store = MemoryKeyValueStore();
+    diskCache = _MockDiskCache();
+    when(() => diskCache.clear()).thenAnswer((_) async {});
     when(() => handler.skipToNext()).thenAnswer((_) async {});
     when(() => handler.skipToPrevious()).thenAnswer((_) async {});
     when(() => handler.play()).thenAnswer((_) async {});
@@ -147,7 +160,13 @@ void main() {
     required Brightness brightness,
     QueueState? playing,
     List<Playlist> playlists = const [],
-    List<Override> extraOverrides = const [],
+    LyricsResult? lyrics,
+    EqualizerState equalizer = const EqualizerState(
+      settings: EqualizerSettings(),
+    ),
+    AppPreferences preferences = const AppPreferences(),
+    int lyricsCacheBytes = 0,
+    List<LyricsFolder> lyricsFolders = const [],
   }) async {
     tester.view
       ..physicalSize = const Size(1080, 2340)
@@ -186,7 +205,14 @@ void main() {
                 Stream.value(playlists.where((p) => p.id == id).firstOrNull),
           ),
           favoriteIdsProvider.overrideWith((ref) => Stream.value([3, 5])),
-          ...extraOverrides,
+          equalizerControllerProvider.overrideWithValue(_MockEqualizer()),
+          equalizerStateProvider.overrideWith((ref) => Stream.value(equalizer)),
+          currentLyricsProvider.overrideWith((ref) async => lyrics),
+          keyValueStoreProvider.overrideWithValue(store),
+          initialPreferencesProvider.overrideWithValue(preferences),
+          lyricsCacheSizeProvider.overrideWith((ref) async => lyricsCacheBytes),
+          lyricsFoldersProvider.overrideWith((ref) async => lyricsFolders),
+          lyricsDiskCacheProvider.overrideWithValue(diskCache),
         ],
         child: RepaintBoundary(
           key: shotKey,
@@ -314,10 +340,7 @@ void main() {
       tester,
       const EqualizerScreen(),
       brightness: Brightness.dark,
-      extraOverrides: [
-        equalizerControllerProvider.overrideWithValue(_MockEqualizer()),
-        equalizerStateProvider.overrideWith((ref) => Stream.value(state)),
-      ],
+      equalizer: state,
     );
     expect(find.text('Rock'), findsOneWidget);
     expect(find.text('Personalizado'), findsOneWidget);
@@ -344,9 +367,7 @@ void main() {
         const PlayerScreen(),
         brightness: Brightness.dark,
         playing: queue,
-        extraOverrides: [
-          currentLyricsProvider.overrideWith((ref) async => result),
-        ],
+        lyrics: result,
       );
       await tester.tap(find.byTooltip('Ver letra'));
       await settle(tester);
@@ -417,6 +438,72 @@ void main() {
       await openLyrics(tester, const LyricsUnavailable());
       expect(find.text('No se pudo obtener la letra'), findsOneWidget);
       expect(find.text('Reintentar'), findsOneWidget);
+    });
+  });
+
+  group('ajustes', () {
+    Future<void> openSettings(
+      WidgetTester tester, {
+      Brightness brightness = Brightness.dark,
+      int lyricsCacheBytes = 0,
+      List<LyricsFolder> lyricsFolders = const [],
+    }) async {
+      await pumpApp(
+        tester,
+        const HomeShell(),
+        brightness: brightness,
+        lyricsCacheBytes: lyricsCacheBytes,
+        lyricsFolders: lyricsFolders,
+        equalizer: const EqualizerState(
+          settings: EqualizerSettings(
+            enabled: true,
+            preset: EqualizerPreset.jazz,
+          ),
+        ),
+      );
+      await tester.tap(find.text('Ajustes').last);
+      await settle(tester);
+    }
+
+    screenTest('muestra las secciones y el estado actual', (tester) async {
+      await openSettings(
+        tester,
+        lyricsCacheBytes: 3 * 1024 * 1024 ~/ 2,
+        lyricsFolders: const [
+          LyricsFolder(uri: 'tree', path: '/storage/emulated/0/Music'),
+        ],
+      );
+      expect(find.text('Sistema'), findsOneWidget);
+      expect(find.text('Activado · Jazz'), findsOneWidget);
+      expect(find.text('1.5 MB en uso'), findsOneWidget);
+      expect(find.text('Music'), findsOneWidget);
+      await shot(tester, shotKey, '15_ajustes');
+    });
+
+    screenTest('elegir un tema lo guarda', (tester) async {
+      await openSettings(tester);
+      await tester.tap(find.text('Claro'));
+      await settle(tester);
+      expect(store.values[AppPreferences.themeModeKey], 'light');
+      await tester.tap(find.text('Oscuro'));
+      await settle(tester);
+      expect(store.values[AppPreferences.themeModeKey], 'dark');
+    });
+
+    screenTest('«No guardar letras» se guarda', (tester) async {
+      await openSettings(tester);
+      await tester.tap(find.text('No guardar letras'));
+      await settle(tester);
+      expect(store.values[AppPreferences.saveLyricsKey], 'false');
+    });
+
+    screenTest('con la caché vacía no se puede borrar', (tester) async {
+      await openSettings(tester);
+      expect(find.text('Vacía'), findsOneWidget);
+      final tile = tester.widget<ListTile>(
+        find.widgetWithText(ListTile, 'Borrar caché de letras'),
+      );
+      expect(tile.enabled, isFalse);
     });
   });
 

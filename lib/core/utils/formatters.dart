@@ -13,3 +13,10 @@ String formatDuration(Duration duration) {
 /// `1 canción` / `n canciones`.
 String songCountLabel(int count) =>
     count == 1 ? '1 canción' : '$count canciones';
+
+/// Tamaño legible: `0 B`, `512 B`, `12 KB`, `1.4 MB`.
+String formatBytes(int bytes) {
+  if (bytes < 1024) return '$bytes B';
+  if (bytes < 1024 * 1024) return '${(bytes / 1024).round()} KB';
+  return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+}

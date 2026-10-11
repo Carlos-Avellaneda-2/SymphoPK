@@ -14,12 +14,15 @@ import 'features/equalizer/presentation/equalizer_providers.dart';
 import 'features/player/data/player_widget_sync.dart';
 import 'features/player/data/sympho_audio_handler.dart';
 import 'features/player/presentation/player_providers.dart';
+import 'features/settings/data/app_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final database = AppDatabase();
   final settingsStore = DriftKeyValueStore(database);
+  // Se leen antes de pintar para arrancar ya con el tema elegido.
+  final preferences = await AppPreferences.load(settingsStore);
 
   // Los efectos de audio se conectan al reproductor al crearlo, así que el
   // ecualizador tiene que existir antes que el servicio de audio.
@@ -53,6 +56,7 @@ Future<void> main() async {
     ProviderScope(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
+        initialPreferencesProvider.overrideWithValue(preferences),
         audioHandlerProvider.overrideWithValue(audioHandler),
         equalizerControllerProvider.overrideWithValue(equalizer),
       ],
