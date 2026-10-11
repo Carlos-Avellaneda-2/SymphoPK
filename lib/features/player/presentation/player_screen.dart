@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../equalizer/presentation/equalizer_screen.dart';
 import '../../favorites/presentation/favorite_button.dart';
 import '../../library/presentation/widgets/artwork_image.dart';
 import 'player_providers.dart';
@@ -114,6 +115,11 @@ class _PlayerBody extends ConsumerWidget {
                             letterSpacing: 0.4,
                           ),
                         ),
+                      ),
+                      IconButton(
+                        tooltip: 'Ecualizador',
+                        onPressed: () => openEqualizerScreen(context),
+                        icon: const Icon(Icons.graphic_eq_rounded),
                       ),
                       IconButton(
                         tooltip: 'Cola de reproducción',

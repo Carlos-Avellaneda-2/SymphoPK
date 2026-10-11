@@ -12,10 +12,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:symphopk/core/permissions/permission_gate.dart';
 import 'package:symphopk/core/theme/app_theme.dart';
+import 'package:symphopk/features/equalizer/data/equalizer_controller.dart';
+import 'package:symphopk/features/equalizer/data/equalizer_engine.dart';
+import 'package:symphopk/features/equalizer/domain/equalizer_preset.dart';
+import 'package:symphopk/features/equalizer/domain/equalizer_settings.dart';
+import 'package:symphopk/features/equalizer/presentation/equalizer_providers.dart';
+import 'package:symphopk/features/equalizer/presentation/equalizer_screen.dart';
 import 'package:symphopk/features/favorites/presentation/favorites_providers.dart';
 import 'package:symphopk/features/home/home_shell.dart';
 import 'package:symphopk/features/library/data/library_scanner.dart';
@@ -29,6 +36,8 @@ import 'package:symphopk/features/playlists/domain/playlist.dart';
 import 'package:symphopk/features/playlists/presentation/playlist_providers.dart';
 
 class _MockHandler extends Mock implements SymphoAudioHandler {}
+
+class _MockEqualizer extends Mock implements EqualizerController {}
 
 class _FakeScanner implements LibraryScanner {
   _FakeScanner(this._covers);
@@ -134,6 +143,7 @@ void main() {
     required Brightness brightness,
     QueueState? playing,
     List<Playlist> playlists = const [],
+    List<Override> extraOverrides = const [],
   }) async {
     tester.view
       ..physicalSize = const Size(1080, 2340)
@@ -172,6 +182,7 @@ void main() {
                 Stream.value(playlists.where((p) => p.id == id).firstOrNull),
           ),
           favoriteIdsProvider.overrideWith((ref) => Stream.value([3, 5])),
+          ...extraOverrides,
         ],
         child: RepaintBoundary(
           key: shotKey,
@@ -279,6 +290,36 @@ void main() {
     await settle(tester);
     expect(find.text('Reproducir'), findsOneWidget);
     await shot(tester, shotKey, '08_detalle_lista');
+  });
+
+  screenTest('ecualizador', (tester) async {
+    const state = EqualizerState(
+      settings: EqualizerSettings(
+        enabled: true,
+        preset: EqualizerPreset.rock,
+        loudnessDb: 3,
+      ),
+      capabilities: EqualizerCapabilities(
+        centerFrequencies: [60, 230, 910, 3600, 14000],
+        minDb: -15,
+        maxDb: 15,
+      ),
+      gains: [5, 3, -1, 3, 5],
+    );
+    await pumpApp(
+      tester,
+      const EqualizerScreen(),
+      brightness: Brightness.dark,
+      extraOverrides: [
+        equalizerControllerProvider.overrideWithValue(_MockEqualizer()),
+        equalizerStateProvider.overrideWith((ref) => Stream.value(state)),
+      ],
+    );
+    expect(find.text('Rock'), findsOneWidget);
+    expect(find.text('Personalizado'), findsOneWidget);
+    expect(find.text('3.6 kHz'), findsOneWidget);
+    expect(find.text('+5 dB'), findsNWidgets(2));
+    await shot(tester, shotKey, '12_ecualizador');
   });
 
   screenTest('permiso negado', (tester) async {
