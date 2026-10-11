@@ -72,6 +72,14 @@ class MediaStoreScanner implements LibraryScanner {
       artistId: (row['artistId'] as num?)?.toInt(),
       track: (row['track'] as num?)?.toInt(),
       dateAdded: (row['dateAdded'] as num?)?.toInt(),
+      folder: _folderOf(row['path'] as String?),
     );
+  }
+
+  /// Carpeta que contiene el archivo: todo lo anterior a la última `/`.
+  static String _folderOf(String? filePath) {
+    if (filePath == null) return '';
+    final slash = filePath.lastIndexOf('/');
+    return slash <= 0 ? '' : filePath.substring(0, slash);
   }
 }

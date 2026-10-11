@@ -5,6 +5,7 @@ import '../data/library_scanner.dart';
 import '../data/media_store_scanner.dart';
 import '../domain/album.dart';
 import '../domain/artist.dart';
+import '../domain/folder.dart';
 import '../domain/library_grouping.dart';
 import '../domain/song.dart';
 
@@ -33,6 +34,10 @@ final albumsProvider = Provider<List<Album>>(
 
 final artistsProvider = Provider<List<Artist>>(
   (ref) => groupArtists(ref.watch(songsProvider).value ?? const []),
+);
+
+final foldersProvider = Provider<List<Folder>>(
+  (ref) => groupFolders(ref.watch(songsProvider).value ?? const []),
 );
 
 /// Texto de búsqueda de la biblioteca.

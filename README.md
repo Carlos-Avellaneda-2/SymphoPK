@@ -6,8 +6,10 @@ notificación multimedia y controles en la pantalla de bloqueo.
 
 ## Funcionalidades
 
-- **Biblioteca**: todas las canciones, vistas por álbum y por artista, y
-  búsqueda por título o artista.
+- **Biblioteca**: todas las canciones, vistas por carpeta, por álbum y por
+  artista, y búsqueda por título o artista.
+- **Carpetas**: la música aparece agrupada según las carpetas del
+  dispositivo, sin necesidad de crear listas a mano.
 - **Reproductor**: play/pausa, siguiente, anterior, barra de progreso con
   seek, cola reordenable, modo aleatorio y repetir (ninguna / todas / una).
 - **Mini reproductor** persistente y **pantalla completa** con la carátula
@@ -23,7 +25,7 @@ notificación multimedia y controles en la pantalla de bloqueo.
 
 ## Estado
 
-Primera versión (1.0.0). El MVP está completo y se ha ejecutado en un
+Versión 1.1.0. Añade la vista por carpetas a la primera versión. El MVP está completo y se ha ejecutado en un
 teléfono real con Android: el permiso, el escaneo de la biblioteca y las
 carátulas funcionan. El resto de comprobaciones que dependen del sistema
 están en [Qué hay que probar en un dispositivo real](#qué-hay-que-probar-en-un-dispositivo-real).
@@ -137,8 +139,8 @@ lib/
     ├── home/                  Estructura con navegación inferior y mini reproductor
     ├── library/
     │   ├── data/              LibraryScanner (MediaStore) y caché de carátulas
-    │   ├── domain/            Song, Album, Artist y agrupación/búsqueda
-    │   └── presentation/      Biblioteca, detalle de álbum/artista, widgets comunes
+    │   ├── domain/            Song, Album, Artist, Folder y agrupación/búsqueda
+    │   └── presentation/      Biblioteca, detalle de álbum/artista/carpeta, widgets comunes
     ├── player/
     │   ├── data/              SymphoAudioHandler y persistencia de la sesión
     │   ├── domain/            QueueManager (cola, aleatorio, repetir) y sesión

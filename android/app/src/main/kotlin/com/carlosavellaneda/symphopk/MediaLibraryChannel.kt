@@ -92,6 +92,9 @@ class MediaLibraryChannel(
             MediaStore.Audio.Media.TRACK,
             MediaStore.Audio.Media.DATE_ADDED,
             COLUMN_DURATION,
+            // Ruta del archivo: solo se usa para agrupar por carpetas, nunca
+            // para abrirlo (la reproducción va por el URI de contenido).
+            MediaStore.Audio.Media.DATA,
         )
         val songs = ArrayList<Map<String, Any?>>()
         context.contentResolver.query(
@@ -112,6 +115,7 @@ class MediaLibraryChannel(
             val track = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK)
             val dateAdded = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
             val duration = cursor.getColumnIndexOrThrow(COLUMN_DURATION)
+            val path = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
 
             while (cursor.moveToNext()) {
                 val songId = cursor.getLong(id)
@@ -128,6 +132,7 @@ class MediaLibraryChannel(
                         "track" to cursor.longOrNull(track),
                         "dateAdded" to cursor.longOrNull(dateAdded),
                         "durationMs" to (cursor.longOrNull(duration) ?: 0L),
+                        "path" to cursor.getString(path),
                     ),
                 )
             }

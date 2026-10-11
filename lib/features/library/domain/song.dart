@@ -14,6 +14,7 @@ class Song {
     this.artistId,
     this.track,
     this.dateAdded,
+    this.folder = '',
   });
 
   final int id;
@@ -30,6 +31,10 @@ class Song {
 
   /// Segundos desde epoch, tal como lo entrega MediaStore.
   final int? dateAdded;
+
+  /// Ruta absoluta de la carpeta que contiene el archivo; vacía si se
+  /// desconoce.
+  final String folder;
 
   @override
   bool operator ==(Object other) => other is Song && other.id == id;

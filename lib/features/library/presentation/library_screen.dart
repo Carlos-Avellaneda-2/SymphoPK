@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/formatters.dart';
+import '../../player/presentation/player_providers.dart';
 import '../domain/album.dart';
 import '../domain/artist.dart';
-import '../../player/presentation/player_providers.dart';
+import '../domain/folder.dart';
 import '../domain/song.dart';
 import 'library_providers.dart';
 import 'song_collection_screen.dart';
@@ -13,7 +14,7 @@ import 'widgets/empty_state.dart';
 import 'widgets/song_menu.dart';
 import 'widgets/song_tile.dart';
 
-/// Biblioteca: buscador y pestañas de canciones, álbumes y artistas.
+/// Biblioteca: buscador y pestañas de canciones, carpetas, álbumes y artistas.
 class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
 
@@ -37,7 +38,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final query = ref.watch(searchQueryProvider);
 
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         body: SafeArea(
           bottom: false,
@@ -80,8 +81,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               const SizedBox(height: 8),
               if (query.trim().isEmpty)
                 const TabBar(
+                  // Cuatro pestañas caben justas en pantallas estrechas.
+                  labelPadding: EdgeInsets.symmetric(horizontal: 4),
                   tabs: [
                     Tab(text: 'Canciones'),
+                    Tab(text: 'Carpetas'),
                     Tab(text: 'Álbumes'),
                     Tab(text: 'Artistas'),
                   ],
@@ -120,6 +124,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                           onRefresh: () => ref.refresh(songsProvider.future),
                           child: SongListView(songs: all),
                         ),
+                        _FoldersList(folders: ref.watch(foldersProvider)),
                         _AlbumsGrid(albums: ref.watch(albumsProvider)),
                         _ArtistsList(artists: ref.watch(artistsProvider)),
                       ],
@@ -175,6 +180,81 @@ class _SearchResults extends StatelessWidget {
       );
     }
     return SongListView(songs: results);
+  }
+}
+
+/// Carpetas del dispositivo que contienen música, como en un explorador.
+class _FoldersList extends StatelessWidget {
+  const _FoldersList({required this.folders});
+
+  final List<Folder> folders;
+
+  @override
+  Widget build(BuildContext context) {
+    if (folders.isEmpty) {
+      return const EmptyState(
+        icon: Icons.folder_off_outlined,
+        title: 'Sin carpetas',
+        message: 'No se pudo determinar la carpeta de las canciones.',
+      );
+    }
+    final scheme = Theme.of(context).colorScheme;
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 4, bottom: 16),
+      itemCount: folders.length,
+      itemExtent: 72,
+      itemBuilder: (context, index) {
+        final folder = folders[index];
+        final count = songCountLabel(folder.songs.length);
+        final subtitle = folder.location.isEmpty
+            ? count
+            : '${folder.location} · $count';
+        return ListTile(
+          leading: Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              ArtworkImage(songId: folder.cover.id, size: 48),
+              // Distintivo para diferenciarla de un álbum o una canción.
+              Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: scheme.surface,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                  ),
+                ),
+                child: Icon(
+                  Icons.folder_rounded,
+                  size: 16,
+                  color: scheme.primary,
+                ),
+              ),
+            ],
+          ),
+          title: Text(
+            folder.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: scheme.onSurfaceVariant),
+          ),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => SongCollectionScreen(
+                title: folder.name,
+                subtitle: subtitle,
+                songs: folder.songs,
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 

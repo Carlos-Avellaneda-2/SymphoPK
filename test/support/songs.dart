@@ -9,6 +9,7 @@ Song song(
   int? albumId,
   int? artistId,
   int? track,
+  String folder = '',
 }) => Song(
   id: id,
   title: title ?? 'Canción $id',
@@ -19,6 +20,7 @@ Song song(
   albumId: albumId,
   artistId: artistId,
   track: track,
+  folder: folder,
 );
 
 List<Song> songs(int count) => [for (var i = 1; i <= count; i++) song(i)];

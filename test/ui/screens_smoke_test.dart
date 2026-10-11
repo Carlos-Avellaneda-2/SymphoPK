@@ -61,6 +61,8 @@ final _library = [
       albumId: i % 2,
       artistId: i % 3,
       track: i,
+      folder:
+          '/storage/emulated/0/Music/${const ['Rock', 'Salsa', 'Para estudiar'][i % 3]}',
     ),
 ];
 
@@ -198,6 +200,11 @@ void main() {
     expect(find.text('Biblioteca'), findsWidgets);
     expect(find.byType(NavigationBar), findsOneWidget);
     await shot(tester, shotKey, '01_biblioteca_oscuro');
+
+    await tester.tap(find.text('Carpetas'));
+    await settle(tester);
+    expect(find.text('Para estudiar'), findsOneWidget);
+    await shot(tester, shotKey, '10_carpetas_oscuro');
 
     await tester.tap(find.text('Álbumes'));
     await settle(tester);
