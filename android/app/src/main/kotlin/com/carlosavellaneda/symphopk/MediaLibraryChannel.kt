@@ -24,6 +24,7 @@ import java.util.concurrent.Executors
 class MediaLibraryChannel(
     private val context: Context,
     messenger: BinaryMessenger,
+    private val onPickFolder: (MethodChannel.Result) -> Unit,
 ) : MethodChannel.MethodCallHandler {
 
     private val channel = MethodChannel(messenger, CHANNEL)
@@ -57,6 +58,27 @@ class MediaLibraryChannel(
                 } else {
                     runInBackground(result) { artwork(id, size) }
                 }
+            }
+            // Letras: archivos .lrc y carpetas concedidas para leerlos.
+            "readFile" -> {
+                val path = call.argument<String>("path")
+                if (path == null) {
+                    result.error("bad_args", "Falta la ruta del archivo", null)
+                } else {
+                    runInBackground(result) { SiblingFileReader.read(context, path) }
+                }
+            }
+            "lyricsFolders" -> runInBackground(result) {
+                SiblingFileReader.grantedFolders(context).map {
+                    mapOf("uri" to it.uri.toString(), "path" to it.path)
+                }
+            }
+            "pickLyricsFolder" -> onPickFolder(result)
+            "releaseLyricsFolder" -> {
+                call.argument<String>("uri")?.let {
+                    SiblingFileReader.release(context, Uri.parse(it))
+                }
+                result.success(null)
             }
             else -> result.notImplemented()
         }

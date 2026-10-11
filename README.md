@@ -22,6 +22,12 @@ sesión.
   reproducir una carpeta entera, subcarpetas incluidas.
 - **Widgets** para la pantalla de inicio en dos tamaños (4×1 y 3×2), con
   carátula, título y controles de anterior, play/pausa y siguiente.
+- **Ecualizador** con las bandas del dispositivo, preajustes, refuerzo de
+  volumen y configuración persistente.
+- **Letras sincronizadas**: desde un archivo `.lrc`, desde los metadatos
+  del archivo o desde LRCLIB, con la línea actual resaltada.
+- **Ajustes**: tema (sistema, claro u oscuro), ecualizador y opciones de
+  letras.
 - **Reproductor**: play/pausa, siguiente, anterior, barra de progreso con
   seek, cola reordenable, modo aleatorio y repetir (ninguna / todas / una).
 - **Mini reproductor** persistente y **pantalla completa** con la carátula
@@ -63,21 +69,63 @@ SymphoPK. Hay dos tamaños:
 Los botones (anterior, play/pausa, siguiente) actúan sobre la música en
 curso sin abrir la app. Tocar la carátula o el texto abre SymphoPK.
 
+### Ecualizador
+
+Se abre desde **Ajustes > Ecualizador** o con el icono de ondas del
+reproductor. El número de bandas, sus frecuencias y el rango de ganancia
+los informa cada dispositivo, así que la pantalla puede variar de un
+teléfono a otro. Hace falta haber cargado una canción para que el
+dispositivo informe de sus bandas.
+
+Mover cualquier deslizador cambia el preajuste a **Personalizado**. El
+refuerzo de volumen está limitado a 10 dB para evitar distorsión.
+
+### Letras
+
+En el reproductor, el botón de letra (junto al corazón) alterna entre la
+carátula y la letra. La app la busca en este orden:
+
+1. Un archivo `.lrc` con el mismo nombre que la canción y en su misma
+   carpeta.
+2. La letra incrustada en los metadatos del archivo.
+3. [LRCLIB](https://lrclib.net), un servicio gratuito y sin registro.
+
+Si la letra tiene marcas de tiempo, la línea actual se resalta y queda
+centrada; tocar una línea salta a ese momento. Al desplazar a mano, el
+seguimiento se pausa unos segundos.
+
+Para que la app pueda leer tus archivos `.lrc` en Android 11 o superior
+hay que concederle la carpeta de la música una vez, en
+**Ajustes > Letras > Acceso a archivos .lrc**. El permiso de música no
+basta porque un `.lrc` no es un archivo de audio.
+
+Las letras descargadas no se guardan de forma permanente: se mantienen en
+memoria y en la caché temporal de la app (7 días sin uso, 5 MB como
+máximo). **Ajustes > Letras** permite no guardarlas en disco y vaciar la
+caché.
+
 ## Estado
 
-Versión actual: **1.2.0**. Se ha ejecutado en un teléfono real con Android:
+Versión actual: **1.3.0**. Se ha ejecutado en un teléfono real con Android:
 el permiso, el escaneo de la biblioteca y las carátulas funcionan. El resto
 de comprobaciones que dependen del sistema están en
 [Qué hay que probar en un dispositivo real](#qué-hay-que-probar-en-un-dispositivo-real).
+El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
 
 | Versión | Cambios |
 | --- | --- |
+| [1.3.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.3.0) | Ecualizador, letras sincronizadas y pantalla de ajustes con selección de tema |
 | [1.2.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.2.0) | Navegación anidada por carpetas y widgets de pantalla de inicio (4×1 y 3×2) |
 | [1.1.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.1.0) | Vista de la biblioteca por carpetas |
 | [1.0.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.0.0) | Primera versión: biblioteca, reproductor, segundo plano, listas, favoritos y sesión |
 
 Limitaciones conocidas:
 
+- El ecualizador y las letras de la versión 1.3.0 se desarrollaron sin
+  dispositivo: están cubiertos por tests, pero pendientes de la prueba
+  manual en un teléfono.
+- El ecualizador usa los efectos de audio de Android; algunos dispositivos
+  no los ofrecen o los aplican de forma distinta.
 - Los widgets controlan la reproducción mientras la app sigue en marcha
   (abierta o con música en segundo plano). Si el sistema la ha cerrado, el
   primer toque abre la app en lugar de reproducir.
@@ -158,6 +206,8 @@ y después deslizar hacia abajo en la pestaña **Canciones** para reescanear.
 | `drift` + `drift_flutter` | Persistencia en SQLite |
 | `palette_generator_master` | Colores a partir de la carátula |
 | `google_fonts` | Tipografía Manrope |
+| `http` | Consultas a LRCLIB |
+| `audio_metadata_reader` | Letras incrustadas en los archivos de audio |
 
 **Lectura de la biblioteca**: no se usa ningún paquete. `MediaLibraryChannel.kt`
 consulta MediaStore, que ya tiene indexados título, artista, álbum, duración
@@ -185,11 +235,19 @@ lib/
 │   ├── utils/                 Formateadores
 │   └── widgets/               Widgets genéricos
 └── features/
+    ├── equalizer/
+    │   ├── data/              EqualizerController y EqualizerEngine (efectos de just_audio)
+    │   ├── domain/            Preajustes como curvas y su mapeo a las bandas
+    │   └── presentation/      Pantalla del ecualizador
     ├── home/                  Estructura con navegación inferior y mini reproductor
     ├── library/
     │   ├── data/              LibraryScanner (MediaStore) y caché de carátulas
     │   ├── domain/            Song, Album, Artist, Folder y agrupación/búsqueda
     │   └── presentation/      Biblioteca, detalle de álbum/artista/carpeta, widgets comunes
+    ├── lyrics/
+    │   ├── data/              Fuentes (.lrc, metadatos, LRCLIB), caché y repositorio
+    │   ├── domain/            Modelo de letra, parser LRC y selección de coincidencia
+    │   └── presentation/      Panel de letras
     ├── player/
     │   ├── data/              SymphoAudioHandler, persistencia de la sesión y
     │   │                      sincronización con los widgets
@@ -199,9 +257,12 @@ lib/
     │   ├── data/              PlaylistRepository (Drift)
     │   ├── domain/            Playlist
     │   └── presentation/      Listas, detalle y diálogos
-    └── favorites/
-        ├── data/              FavoritesRepository (Drift)
-        └── presentation/      Pantalla y botón de favorito
+    ├── favorites/
+    │   ├── data/              FavoritesRepository (Drift)
+    │   └── presentation/      Pantalla y botón de favorito
+    └── settings/
+        ├── data/              Preferencias de la app (tema, guardado de letras)
+        └── presentation/      Pantalla de ajustes
 test/                          Tests de cola, repositorios, sesión, biblioteca, permisos
                                y pruebas de humo de las pantallas
 android/                       Proyecto Android: manifest con el servicio mediaPlayback,
@@ -225,6 +286,10 @@ Decisiones a tener en cuenta:
   plataforma y ejecuta las órdenes de sus botones. El enlace nativo vive
   mientras exista el motor de Flutter, no la actividad, por eso funcionan
   con la música en segundo plano.
+- **Los preajustes del ecualizador son curvas por frecuencia**, no valores
+  por banda: se interpolan a las bandas que tenga cada dispositivo.
+- **Las letras nunca se guardan de forma permanente**: solo pasan por la
+  memoria y por el directorio de caché, que el sistema puede vaciar.
 - **Preparado para iOS**: lo específico de Android está en
   `MediaStoreScanner`, `AudioPermissionService`, `PlayerWidgetSync` y la
   carpeta `android/`.
@@ -237,7 +302,7 @@ Decisiones a tener en cuenta:
 | `READ_EXTERNAL_STORAGE` (hasta API 32) | Leer la música en versiones anteriores |
 | `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `WAKE_LOCK` | Reproducción en segundo plano |
 | `POST_NOTIFICATIONS` | Notificación multimedia en Android 13 o superior |
-| `INTERNET` | Descargar la tipografía Manrope la primera vez (queda en caché) |
+| `INTERNET` | Descargar la tipografía Manrope la primera vez y buscar letras en LRCLIB |
 
 ## Qué hay que probar en un dispositivo real
 
@@ -257,5 +322,13 @@ y muestra las carátulas; lo siguiente sigue pendiente de una prueba manual:
 5. **Widgets**: mantén pulsada la pantalla de inicio, añade los widgets de
    SymphoPK y comprueba que muestran la canción actual y que sus botones
    responden con la app en segundo plano.
-6. **Reanudar**: cierra la app desde recientes estando en pausa, vuelve a
+6. **Ecualizador**: actívalo con música sonando y comprueba que los
+   preajustes y los deslizadores cambian el sonido al instante, y que la
+   configuración sigue ahí al reabrir la app.
+7. **Letras**: prueba una canción con `.lrc` (tras conceder la carpeta),
+   una con letra incrustada y una que solo esté en LRCLIB; después activa
+   el modo avión y comprueba el aviso de «Sin conexión».
+8. **Tema**: cambia entre sistema, claro y oscuro en Ajustes y comprueba
+   que se conserva al reabrir.
+9. **Reanudar**: cierra la app desde recientes estando en pausa, vuelve a
    abrirla y comprueba que aparece la misma canción en la misma posición.

@@ -63,8 +63,8 @@ class MediaStoreScanner implements LibraryScanner {
       id: id,
       uri: uri,
       title: text('title') ?? nameWithoutExtension ?? 'Sin título',
-      artist: text('artist') ?? 'Artista desconocido',
-      album: text('album') ?? 'Álbum desconocido',
+      artist: text('artist') ?? Song.unknownArtist,
+      album: text('album') ?? Song.unknownAlbum,
       duration: Duration(
         milliseconds: (row['durationMs'] as num?)?.toInt() ?? 0,
       ),
@@ -73,6 +73,7 @@ class MediaStoreScanner implements LibraryScanner {
       track: (row['track'] as num?)?.toInt(),
       dateAdded: (row['dateAdded'] as num?)?.toInt(),
       folder: _folderOf(row['path'] as String?),
+      path: row['path'] as String? ?? '',
     );
   }
 

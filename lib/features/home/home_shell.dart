@@ -6,6 +6,7 @@ import '../library/presentation/library_screen.dart';
 import '../player/presentation/player_providers.dart';
 import '../player/presentation/widgets/mini_player.dart';
 import '../playlists/presentation/playlists_screen.dart';
+import '../settings/presentation/settings_screen.dart';
 
 /// Estructura principal. El contenido vive en un `Navigator` anidado para
 /// que el mini reproductor y la barra inferior sigan visibles al entrar en
@@ -64,6 +65,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                   selectedIcon: Icon(Icons.queue_music_rounded),
                   label: 'Listas',
                 ),
+                NavigationDestination(
+                  icon: Icon(Icons.settings_outlined),
+                  selectedIcon: Icon(Icons.settings_rounded),
+                  label: 'Ajustes',
+                ),
               ],
             ),
           ),
@@ -85,6 +91,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                   LibraryScreen(),
                   FavoritesScreen(),
                   PlaylistsScreen(),
+                  SettingsScreen(),
                 ],
               ),
             ),
