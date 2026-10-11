@@ -4,6 +4,20 @@ Todas las versiones publicadas de SymphoPK. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones,
 [SemVer](https://semver.org/lang/es/).
 
+## [1.3.2] - 2026-10-11
+
+### Cambiado
+
+- **Las letras de LRCLIB van antes que la incrustada en el archivo.** Muchos
+  archivos traen la letra como texto sin tiempos, y al tener prioridad
+  tapaba la versión sincronizada de LRCLIB. El orden pasa a ser: archivo
+  `.lrc`, LRCLIB y, por último, la letra incrustada.
+- La letra incrustada se sigue usando cuando aporta más: si LRCLIB no tiene
+  la canción, si no hay conexión o el servicio falla, o si la incrustada
+  está sincronizada y la de LRCLIB no.
+- Si se mostró la incrustada por falta de conexión, se vuelve a consultar
+  LRCLIB la siguiente vez.
+
 ## [1.3.1] - 2026-10-10
 
 ### Corregido
@@ -87,6 +101,7 @@ Todas las versiones publicadas de SymphoPK. El formato sigue
 - Recuerda la última canción y la posición al reabrir.
 - Tema claro y oscuro según el sistema.
 
+[1.3.2]: https://github.com/Carlos-Avellaneda-2/SymphoPK/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/Carlos-Avellaneda-2/SymphoPK/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/Carlos-Avellaneda-2/SymphoPK/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/Carlos-Avellaneda-2/SymphoPK/compare/v1.1.0...v1.2.0

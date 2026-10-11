@@ -36,12 +36,21 @@ class LyricsUnavailable extends LyricsResult {
 
 /// Reúne todas las fuentes de letras y sus cachés.
 ///
-/// Orden de búsqueda: memoria, archivo `.lrc`, metadatos del archivo, caché
-/// en disco y, por último, LRCLIB. Solo lo descargado de LRCLIB pasa por el
-/// disco, y nunca de forma permanente.
+/// Orden de búsqueda: memoria, fuentes prioritarias (el archivo `.lrc`, que
+/// el usuario puso a propósito), LRCLIB (con su caché en disco) y, por
+/// último, fuentes de reserva (la letra incrustada en el archivo).
+///
+/// La letra incrustada va después de LRCLIB porque casi siempre es texto sin
+/// tiempos y taparía una versión sincronizada. Aun así se usa cuando aporta
+/// más: si está sincronizada y la de LRCLIB no, o si LRCLIB no tiene letra
+/// o no se puede consultar.
+///
+/// Solo lo descargado de LRCLIB pasa por el disco, y nunca de forma
+/// permanente.
 class LyricsRepository {
   LyricsRepository({
     required this._localSources,
+    this._fallbackSources = const [],
     required this._remote,
     required LyricsDiskCache diskCache,
     bool Function()? diskCacheEnabled,
@@ -49,7 +58,11 @@ class LyricsRepository {
   }) : _disk = diskCache,
        _diskEnabled = diskCacheEnabled ?? (() => true);
 
+  /// Se consultan antes que la red; lo que encuentren es definitivo.
   final List<LocalLyricsSource> _localSources;
+
+  /// Se consultan después de la red, por si mejoran su resultado.
+  final List<LocalLyricsSource> _fallbackSources;
   final RemoteLyricsSource _remote;
   final LyricsDiskCache _disk;
   final bool Function() _diskEnabled;
@@ -93,25 +106,44 @@ class LyricsRepository {
       if (lyrics != null) return _remember(song, _toResult(lyrics));
     }
 
+    // LRCLIB: primero su caché en disco y, si no está, la red.
     final key = lyricsCacheKey(song);
-    if (_diskEnabled()) {
-      final lyrics = await _disk.read(key);
-      if (lyrics != null) return _remember(song, _toResult(lyrics));
+    Lyrics? online;
+    LyricsResult? failure;
+    if (_diskEnabled()) online = await _disk.read(key);
+    if (online == null) {
+      try {
+        online = await _remote.fetch(song);
+        if (online != null && _diskEnabled()) await _disk.write(key, online);
+      } on LyricsNetworkException {
+        failure = const LyricsOffline();
+      } on Object {
+        // Error del servicio o respuesta inesperada: nunca debe propagarse
+        // hasta cerrar la app.
+        failure = const LyricsUnavailable();
+      }
+    }
+    // Una letra sincronizada de LRCLIB es lo mejor que se puede obtener.
+    if (online != null && online.isSynced) {
+      return _remember(song, LyricsFound(online));
     }
 
-    final Lyrics? lyrics;
-    try {
-      lyrics = await _remote.fetch(song);
-    } on LyricsNetworkException {
-      return const LyricsOffline();
-    } on Object {
-      // Error del servicio o respuesta inesperada: nunca debe propagarse
-      // hasta cerrar la app.
-      return const LyricsUnavailable();
+    // Sin sincronizada en línea, la letra del propio archivo puede ser
+    // mejor: gana si tiene tiempos o si LRCLIB no aportó texto.
+    final onlineHasText =
+        online != null && !online.instrumental && !online.isEmpty;
+    for (final source in _fallbackSources) {
+      final lyrics = await source.find(song);
+      if (lyrics == null || lyrics.isEmpty) continue;
+      if (!lyrics.isSynced && onlineHasText) break;
+      final result = _toResult(lyrics);
+      // Si la red falló no se recuerda: al volver la conexión se intentará
+      // de nuevo por si LRCLIB tiene una versión sincronizada.
+      return failure == null ? _remember(song, result) : result;
     }
-    if (lyrics == null) return _remember(song, const LyricsNotFound());
-    if (_diskEnabled()) await _disk.write(key, lyrics);
-    return _remember(song, _toResult(lyrics));
+
+    if (online != null) return _remember(song, _toResult(online));
+    return failure ?? _remember(song, const LyricsNotFound());
   }
 
   LyricsResult _toResult(Lyrics lyrics) {
