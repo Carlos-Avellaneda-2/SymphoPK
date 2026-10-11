@@ -73,6 +73,7 @@ class MediaStoreScanner implements LibraryScanner {
       track: (row['track'] as num?)?.toInt(),
       dateAdded: (row['dateAdded'] as num?)?.toInt(),
       folder: _folderOf(row['path'] as String?),
+      path: row['path'] as String? ?? '',
     );
   }
 

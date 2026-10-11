@@ -10,17 +10,20 @@ Song song(
   int? artistId,
   int? track,
   String folder = '',
+  String path = '',
+  Duration duration = const Duration(minutes: 3),
 }) => Song(
   id: id,
   title: title ?? 'Canción $id',
   artist: artist,
   album: album,
   uri: 'content://media/external/audio/media/$id',
-  duration: const Duration(minutes: 3),
+  duration: duration,
   albumId: albumId,
   artistId: artistId,
   track: track,
   folder: folder,
+  path: path,
 );
 
 List<Song> songs(int count) => [for (var i = 1; i <= count; i++) song(i)];

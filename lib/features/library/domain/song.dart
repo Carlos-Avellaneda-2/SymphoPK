@@ -15,6 +15,7 @@ class Song {
     this.track,
     this.dateAdded,
     this.folder = '',
+    this.path = '',
   });
 
   final int id;
@@ -35,6 +36,10 @@ class Song {
   /// Ruta absoluta de la carpeta que contiene el archivo; vacía si se
   /// desconoce.
   final String folder;
+
+  /// Ruta absoluta del archivo; vacía si se desconoce. Solo se usa para
+  /// localizar letras, nunca para reproducir.
+  final String path;
 
   @override
   bool operator ==(Object other) => other is Song && other.id == id;
