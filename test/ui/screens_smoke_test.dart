@@ -28,6 +28,9 @@ import 'package:symphopk/features/home/home_shell.dart';
 import 'package:symphopk/features/library/data/library_scanner.dart';
 import 'package:symphopk/features/library/domain/song.dart';
 import 'package:symphopk/features/library/presentation/library_providers.dart';
+import 'package:symphopk/features/lyrics/data/lyrics_repository.dart';
+import 'package:symphopk/features/lyrics/domain/lyrics.dart';
+import 'package:symphopk/features/lyrics/presentation/lyrics_providers.dart';
 import 'package:symphopk/features/player/data/sympho_audio_handler.dart';
 import 'package:symphopk/features/player/domain/queue_state.dart';
 import 'package:symphopk/features/player/presentation/player_providers.dart';
@@ -119,6 +122,7 @@ void main() {
   late _MockHandler handler;
 
   setUpAll(() async {
+    registerFallbackValue(Duration.zero);
     await _loadFonts();
   });
 
@@ -320,6 +324,100 @@ void main() {
     expect(find.text('3.6 kHz'), findsOneWidget);
     expect(find.text('+5 dB'), findsNWidgets(2));
     await shot(tester, shotKey, '12_ecualizador');
+  });
+
+  group('letras en el reproductor', () {
+    final lyrics = Lyrics(
+      origin: LyricsOrigin.lrclib,
+      lines: [
+        for (var i = 0; i < 24; i++)
+          LyricLine(
+            Duration(seconds: i * 10),
+            i == 5 ? '' : 'Línea número $i de la canción',
+          ),
+      ],
+    );
+
+    Future<void> openLyrics(WidgetTester tester, LyricsResult result) async {
+      await pumpApp(
+        tester,
+        const PlayerScreen(),
+        brightness: Brightness.dark,
+        playing: queue,
+        extraOverrides: [
+          currentLyricsProvider.overrideWith((ref) async => result),
+        ],
+      );
+      await tester.tap(find.byTooltip('Ver letra'));
+      await settle(tester);
+    }
+
+    screenTest('resalta la línea actual y salta al tocar otra', (tester) async {
+      when(() => handler.seek(any())).thenAnswer((_) async {});
+      await openLyrics(tester, LyricsFound(lyrics));
+
+      // La posición simulada es 1:13, dentro de la línea 7 (1:10–1:20).
+      final current = tester.widget<AnimatedDefaultTextStyle>(
+        find
+            .ancestor(
+              of: find.text('Línea número 7 de la canción'),
+              matching: find.byType(AnimatedDefaultTextStyle),
+              // El más cercano es el de la línea; más arriba hay otros de Material.
+            )
+            .first,
+      );
+      expect(current.style.fontWeight, FontWeight.w800);
+      expect(find.text('• • •'), findsOneWidget, reason: 'pausa instrumental');
+      await shot(tester, shotKey, '13_letra_sincronizada');
+
+      await tester.tap(find.text('Línea número 9 de la canción'));
+      verify(() => handler.seek(const Duration(seconds: 90))).called(1);
+
+      // Se puede volver a la carátula.
+      await tester.tap(find.byTooltip('Ver carátula'));
+      await settle(tester);
+      expect(find.text('Línea número 7 de la canción'), findsNothing);
+    });
+
+    screenTest('muestra la letra sin sincronizar como texto', (tester) async {
+      await openLyrics(
+        tester,
+        const LyricsFound(
+          Lyrics(
+            origin: LyricsOrigin.embedded,
+            plainText: 'Primera estrofa\nsin marcas de tiempo',
+          ),
+        ),
+      );
+      expect(find.textContaining('Primera estrofa'), findsOneWidget);
+      expect(find.text('Fuente: Incrustada en el archivo'), findsOneWidget);
+    });
+
+    screenTest('estados sin letra', (tester) async {
+      await openLyrics(tester, const LyricsOffline());
+      expect(find.text('Sin conexión'), findsOneWidget);
+      expect(find.text('Reintentar'), findsOneWidget);
+      await shot(tester, shotKey, '14_letra_sin_conexion');
+    });
+
+    screenTest('instrumental y no encontrada no ofrecen reintentar', (
+      tester,
+    ) async {
+      await openLyrics(tester, const LyricsInstrumental());
+      expect(find.text('Instrumental'), findsOneWidget);
+      expect(find.text('Reintentar'), findsNothing);
+    });
+
+    screenTest('letra no encontrada', (tester) async {
+      await openLyrics(tester, const LyricsNotFound());
+      expect(find.text('Letra no encontrada'), findsOneWidget);
+    });
+
+    screenTest('fallo del servicio permite reintentar', (tester) async {
+      await openLyrics(tester, const LyricsUnavailable());
+      expect(find.text('No se pudo obtener la letra'), findsOneWidget);
+      expect(find.text('Reintentar'), findsOneWidget);
+    });
   });
 
   screenTest('permiso negado', (tester) async {

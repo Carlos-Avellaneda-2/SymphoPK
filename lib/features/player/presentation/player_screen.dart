@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../equalizer/presentation/equalizer_screen.dart';
 import '../../favorites/presentation/favorite_button.dart';
 import '../../library/presentation/widgets/artwork_image.dart';
+import '../../lyrics/presentation/lyrics_panel.dart';
 import 'player_providers.dart';
 import 'widgets/mini_player.dart';
 import 'widgets/player_controls.dart';
@@ -75,11 +76,19 @@ class PlayerScreen extends ConsumerWidget {
   }
 }
 
-class _PlayerBody extends ConsumerWidget {
+class _PlayerBody extends ConsumerStatefulWidget {
   const _PlayerBody();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_PlayerBody> createState() => _PlayerBodyState();
+}
+
+class _PlayerBodyState extends ConsumerState<_PlayerBody> {
+  /// Alterna entre la carátula y el panel de letras.
+  bool _showLyrics = false;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final song = ref.watch(currentSongProvider);
@@ -129,40 +138,21 @@ class _PlayerBody extends ConsumerWidget {
                     ],
                   ),
                   Expanded(
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 20),
-                        // La carátula se encoge un poco en pausa.
-                        child: AnimatedScale(
-                          scale: playing ? 1 : 0.9,
-                          duration: const Duration(milliseconds: 350),
-                          curve: Curves.easeOutCubic,
-                          child: AspectRatio(
-                            aspectRatio: 1,
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(28),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.4),
-                                    blurRadius: 40,
-                                    spreadRadius: -4,
-                                    offset: const Offset(0, 20),
-                                  ),
-                                ],
-                              ),
-                              child: Hero(
-                                tag: artworkHeroTag,
-                                child: ArtworkImage(
-                                  songId: song?.id,
-                                  radius: 28,
-                                  resolution: ArtworkImage.full,
-                                ),
-                              ),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 280),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      child: _showLyrics
+                          ? const Padding(
+                              key: ValueKey('lyrics'),
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              child: LyricsPanel(),
+                            )
+                          : _Artwork(
+                              key: const ValueKey('artwork'),
+                              songId: song?.id,
+                              playing: playing,
                             ),
-                          ),
-                        ),
-                      ),
                     ),
                   ),
                   Row(
@@ -200,6 +190,18 @@ class _PlayerBody extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
+                      IconButton(
+                        tooltip: _showLyrics ? 'Ver carátula' : 'Ver letra',
+                        isSelected: _showLyrics,
+                        onPressed: () =>
+                            setState(() => _showLyrics = !_showLyrics),
+                        icon: const Icon(Icons.lyrics_outlined),
+                        selectedIcon: Icon(
+                          Icons.lyrics_rounded,
+                          color: scheme.primary,
+                        ),
+                        iconSize: 28,
+                      ),
                       FavoriteButton(songId: song?.id, size: 28),
                     ],
                   ),
@@ -212,6 +214,52 @@ class _PlayerBody extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Carátula grande con sombra; se encoge un poco en pausa.
+class _Artwork extends StatelessWidget {
+  const _Artwork({super.key, required this.songId, required this.playing});
+
+  final int? songId;
+  final bool playing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: AnimatedScale(
+          scale: playing ? 1 : 0.9,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutCubic,
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    blurRadius: 40,
+                    spreadRadius: -4,
+                    offset: const Offset(0, 20),
+                  ),
+                ],
+              ),
+              child: Hero(
+                tag: artworkHeroTag,
+                child: ArtworkImage(
+                  songId: songId,
+                  radius: 28,
+                  resolution: ArtworkImage.full,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
