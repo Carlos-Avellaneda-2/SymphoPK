@@ -8,8 +8,11 @@ notificación multimedia y controles en la pantalla de bloqueo.
 
 - **Biblioteca**: todas las canciones, vistas por carpeta, por álbum y por
   artista, y búsqueda por título o artista.
-- **Carpetas**: la música aparece agrupada según las carpetas del
-  dispositivo, sin necesidad de crear listas a mano.
+- **Carpetas**: explorador anidado de las carpetas del dispositivo que
+  contienen música, sin necesidad de crear listas a mano. Se puede
+  reproducir una carpeta entera, subcarpetas incluidas.
+- **Widgets** para la pantalla de inicio en dos tamaños (4×1 y 3×2), con
+  carátula, título y controles de anterior, play/pausa y siguiente.
 - **Reproductor**: play/pausa, siguiente, anterior, barra de progreso con
   seek, cola reordenable, modo aleatorio y repetir (ninguna / todas / una).
 - **Mini reproductor** persistente y **pantalla completa** con la carátula
@@ -25,13 +28,17 @@ notificación multimedia y controles en la pantalla de bloqueo.
 
 ## Estado
 
-Versión 1.1.0. Añade la vista por carpetas a la primera versión. El MVP está completo y se ha ejecutado en un
+Versión 1.2.0. Añade la navegación anidada por carpetas y los widgets de la
+pantalla de inicio. El MVP está completo y se ha ejecutado en un
 teléfono real con Android: el permiso, el escaneo de la biblioteca y las
 carátulas funcionan. El resto de comprobaciones que dependen del sistema
 están en [Qué hay que probar en un dispositivo real](#qué-hay-que-probar-en-un-dispositivo-real).
 
 Limitaciones conocidas:
 
+- Los widgets controlan la reproducción mientras la app sigue en marcha
+  (abierta o con música en segundo plano). Si el sistema la ha cerrado, el
+  primer toque abre la app en lugar de reproducir.
 - La biblioteca lista archivos: si la misma canción está copiada dos veces
   en el dispositivo, aparece dos veces.
 - Las canciones de una lista no se pueden reordenar desde la interfaz (la
@@ -142,7 +149,8 @@ lib/
     │   ├── domain/            Song, Album, Artist, Folder y agrupación/búsqueda
     │   └── presentation/      Biblioteca, detalle de álbum/artista/carpeta, widgets comunes
     ├── player/
-    │   ├── data/              SymphoAudioHandler y persistencia de la sesión
+    │   ├── data/              SymphoAudioHandler, persistencia de la sesión y
+    │   │                      sincronización con los widgets
     │   ├── domain/            QueueManager (cola, aleatorio, repetir) y sesión
     │   └── presentation/      Mini reproductor, pantalla completa, cola
     ├── playlists/
@@ -154,8 +162,9 @@ lib/
         └── presentation/      Pantalla y botón de favorito
 test/                          Tests de cola, repositorios, sesión, biblioteca, permisos
                                y pruebas de humo de las pantallas
-android/                       Proyecto Android: manifest con el servicio mediaPlayback y
-                               MediaLibraryChannel.kt (lectura de MediaStore)
+android/                       Proyecto Android: manifest con el servicio mediaPlayback,
+                               MediaLibraryChannel.kt (lectura de MediaStore) y los
+                               widgets nativos (PlayerWidget*.kt y sus layouts)
 ```
 
 Decisiones a tener en cuenta:
@@ -194,5 +203,8 @@ y muestra las carátulas; lo siguiente sigue pendiente de una prueba manual:
 3. **Auriculares**: los botones del cable o Bluetooth deben controlar la
    reproducción, y al desconectarlos la música debe pausarse.
 4. **Llamadas**: una llamada entrante debe pausar la música.
-5. **Reanudar**: cierra la app desde recientes estando en pausa, vuelve a
+5. **Widgets**: mantén pulsada la pantalla de inicio, añade los widgets de
+   SymphoPK y comprueba que muestran la canción actual y que sus botones
+   responden con la app en segundo plano.
+6. **Reanudar**: cierra la app desde recientes estando en pausa, vuelve a
    abrirla y comprueba que aparece la misma canción en la misma posición.

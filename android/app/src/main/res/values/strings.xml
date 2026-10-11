@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_small_label">SymphoPK 4×1</string>
+    <string name="widget_large_label">SymphoPK 3×2</string>
+    <string name="widget_small_description">Controles del reproductor en una fila</string>
+    <string name="widget_large_description">Carátula y controles del reproductor</string>
+    <string name="widget_empty_title">SymphoPK</string>
+    <string name="widget_empty_subtitle">Toca para abrir</string>
+    <string name="widget_play">Reproducir</string>
+    <string name="widget_pause">Pausar</string>
+    <string name="widget_next">Siguiente</string>
+    <string name="widget_previous">Anterior</string>
+</resources>

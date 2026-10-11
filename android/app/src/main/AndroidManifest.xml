@@ -64,6 +64,34 @@
             </intent-filter>
         </receiver>
 
+        <!-- Widgets de la pantalla de inicio para controlar la reproducción. -->
+        <receiver
+            android:name=".PlayerWidgetSmall"
+            android:exported="true"
+            android:label="@string/widget_small_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/player_widget_small_info"/>
+        </receiver>
+        <receiver
+            android:name=".PlayerWidgetLarge"
+            android:exported="true"
+            android:label="@string/widget_large_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/player_widget_large_info"/>
+        </receiver>
+        <!-- Toques en los botones de los widgets; solo los envía la propia app. -->
+        <receiver
+            android:name=".PlayerWidgetActionReceiver"
+            android:exported="false"/>
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

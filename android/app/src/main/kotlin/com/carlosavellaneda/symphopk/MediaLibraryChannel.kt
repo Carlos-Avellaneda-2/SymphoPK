@@ -3,19 +3,15 @@ package com.carlosavellaneda.symphopk
 import android.content.ContentUris
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
-import android.util.Size
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
-import java.io.IOException
 import java.util.concurrent.Executors
 
 /**
@@ -142,42 +138,11 @@ class MediaLibraryChannel(
 
     /** Carátula de la canción como JPEG, o `null` si no tiene. */
     private fun artwork(songId: Long, size: Int): ByteArray? {
-        val uri = ContentUris.withAppendedId(collection, songId)
-        val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                context.contentResolver.loadThumbnail(uri, Size(size, size), null)
-            } catch (e: IOException) {
-                null // el archivo no tiene carátula
-            }
-        } else {
-            embeddedPicture(uri, size)
-        } ?: return null
-
+        val bitmap = ArtworkLoader.load(context, songId, size) ?: return null
         return ByteArrayOutputStream().use { stream ->
             bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
             bitmap.recycle()
             stream.toByteArray()
-        }
-    }
-
-    /** Antes de Android 10 no existe `loadThumbnail`: se lee la imagen embebida. */
-    private fun embeddedPicture(uri: Uri, size: Int): Bitmap? {
-        val retriever = MediaMetadataRetriever()
-        return try {
-            retriever.setDataSource(context, uri)
-            val bytes = retriever.embeddedPicture ?: return null
-            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-            var sample = 1
-            while (bounds.outWidth / (sample * 2) >= size && bounds.outHeight / (sample * 2) >= size) {
-                sample *= 2
-            }
-            val options = BitmapFactory.Options().apply { inSampleSize = sample }
-            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
-        } catch (e: RuntimeException) {
-            null
-        } finally {
-            retriever.release()
         }
     }
 

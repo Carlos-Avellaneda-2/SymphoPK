@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Carátula por defecto: recuadro tenue con una nota musical. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#26FFFFFF"/>
+            <corners android:radius="10dp"/>
+        </shape>
+    </item>
+    <item
+        android:drawable="@drawable/ic_notification"
+        android:bottom="12dp"
+        android:left="12dp"
+        android:right="12dp"
+        android:top="12dp"/>
+</layer-list>

@@ -14,6 +14,8 @@ class MainActivity : AudioServiceActivity() {
             applicationContext,
             flutterEngine.dartExecutor.binaryMessenger,
         )
+        // Sobrevive a la actividad: se libera cuando se destruye el motor.
+        PlayerWidgetBridge.attach(applicationContext, flutterEngine)
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {

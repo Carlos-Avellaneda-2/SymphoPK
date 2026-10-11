@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
+import 'features/player/data/player_widget_sync.dart';
 import 'features/player/data/sympho_audio_handler.dart';
 import 'features/player/presentation/player_providers.dart';
 
@@ -24,6 +25,10 @@ Future<void> main() async {
     ),
   );
   await audioHandler.configureAudioSession();
+
+  // Mantiene al día los widgets de la pantalla de inicio y atiende sus
+  // botones, también con la app en segundo plano.
+  PlayerWidgetSync(audioHandler).start();
 
   runApp(
     ProviderScope(

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fondo de los widgets: mismo tono oscuro que el icono de la app. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#F21F1C1D"/>
+    <corners android:radius="24dp"/>
+</shape>
