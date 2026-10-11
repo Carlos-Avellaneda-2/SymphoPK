@@ -41,6 +41,14 @@ class Song {
   /// localizar letras, nunca para reproducir.
   final String path;
 
+  /// Textos que sustituyen a las etiquetas que el archivo no trae.
+  static const String unknownArtist = 'Artista desconocido';
+  static const String unknownAlbum = 'Álbum desconocido';
+
+  bool get hasKnownArtist => artist.isNotEmpty && artist != unknownArtist;
+
+  bool get hasKnownAlbum => album.isNotEmpty && album != unknownAlbum;
+
   @override
   bool operator ==(Object other) => other is Song && other.id == id;
 
