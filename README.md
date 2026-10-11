@@ -106,10 +106,9 @@ caché.
 
 ## Estado
 
-Versión actual: **1.3.0**. Se ha ejecutado en un teléfono real con Android:
-el permiso, el escaneo de la biblioteca y las carátulas funcionan. El resto
-de comprobaciones que dependen del sistema están en
-[Qué hay que probar en un dispositivo real](#qué-hay-que-probar-en-un-dispositivo-real).
+Versión actual: **1.3.0**. Todas las funciones se han probado a mano en un
+teléfono Android real, además de los tests automáticos; la lista de lo
+comprobado está en [Probado en un dispositivo real](#probado-en-un-dispositivo-real).
 El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
 
 | Versión | Cambios |
@@ -121,9 +120,6 @@ El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
 
 Limitaciones conocidas:
 
-- El ecualizador y las letras de la versión 1.3.0 se desarrollaron sin
-  dispositivo: están cubiertos por tests, pero pendientes de la prueba
-  manual en un teléfono.
 - El ecualizador usa los efectos de audio de Android; algunos dispositivos
   no los ofrecen o los aplican de forma distinta.
 - Los widgets controlan la reproducción mientras la app sigue en marcha
@@ -304,31 +300,35 @@ Decisiones a tener en cuenta:
 | `POST_NOTIFICATIONS` | Notificación multimedia en Android 13 o superior |
 | `INTERNET` | Descargar la tipografía Manrope la primera vez y buscar letras en LRCLIB |
 
-## Qué hay que probar en un dispositivo real
+## Probado en un dispositivo real
 
-Los tests cubren la lógica, pero estas partes dependen del sistema. Ya está
-comprobado en un teléfono que la app pide el permiso, escanea la biblioteca
-y muestra las carátulas; lo siguiente sigue pendiente de una prueba manual:
+Los tests automáticos cubren la lógica, pero estas partes dependen del
+sistema y solo se pueden validar en un teléfono. Todas se han comprobado a
+mano y funcionan correctamente:
 
-1. **Permisos**: en el primer arranque debe aparecer el diálogo. Al negarlo
-   se muestra la pantalla explicativa; al negarlo dos veces, el botón pasa a
-   «Abrir ajustes».
-2. **Notificación y pantalla de bloqueo**: reproduce una canción, sal de la
-   app y comprueba la notificación con carátula y los botones anterior,
-   play/pausa y siguiente. Bloquea el teléfono y repite.
-3. **Auriculares**: los botones del cable o Bluetooth deben controlar la
-   reproducción, y al desconectarlos la música debe pausarse.
-4. **Llamadas**: una llamada entrante debe pausar la música.
-5. **Widgets**: mantén pulsada la pantalla de inicio, añade los widgets de
-   SymphoPK y comprueba que muestran la canción actual y que sus botones
-   responden con la app en segundo plano.
-6. **Ecualizador**: actívalo con música sonando y comprueba que los
-   preajustes y los deslizadores cambian el sonido al instante, y que la
-   configuración sigue ahí al reabrir la app.
-7. **Letras**: prueba una canción con `.lrc` (tras conceder la carpeta),
-   una con letra incrustada y una que solo esté en LRCLIB; después activa
-   el modo avión y comprueba el aviso de «Sin conexión».
-8. **Tema**: cambia entre sistema, claro y oscuro en Ajustes y comprueba
-   que se conserva al reabrir.
-9. **Reanudar**: cierra la app desde recientes estando en pausa, vuelve a
-   abrirla y comprueba que aparece la misma canción en la misma posición.
+- **Permisos**: el diálogo aparece en el primer arranque. Al negarlo se
+  muestra la pantalla explicativa y, al negarlo dos veces, el botón pasa a
+  «Abrir ajustes».
+- **Biblioteca**: se escanea la música del dispositivo y se muestran las
+  carátulas, también en la vista por carpetas.
+- **Notificación y pantalla de bloqueo**: al salir de la app con música
+  sonando aparecen la carátula y los botones de anterior, play/pausa y
+  siguiente, también con el teléfono bloqueado.
+- **Auriculares**: los botones del cable o Bluetooth controlan la
+  reproducción y la música se pausa al desconectarlos.
+- **Llamadas**: una llamada entrante pausa la música.
+- **Widgets**: los de 4×1 y 3×2 muestran la canción actual y sus botones
+  responden con la app en segundo plano.
+- **Ecualizador**: los preajustes y los deslizadores cambian el sonido al
+  instante y la configuración se conserva al reabrir la app.
+- **Letras**: se cargan desde un archivo `.lrc` (tras conceder la carpeta),
+  desde los metadatos del archivo y desde LRCLIB; sin conexión aparece el
+  aviso correspondiente.
+- **Tema**: el cambio entre sistema, claro y oscuro es inmediato y se
+  conserva al reabrir.
+- **Reanudar**: al cerrar la app en pausa y volver a abrirla aparece la
+  misma canción en la misma posición.
+
+El comportamiento puede variar en otros dispositivos, sobre todo el
+ecualizador, que depende de los efectos de audio de cada fabricante. Esta
+misma lista sirve para repetir la comprobación en otro teléfono.
