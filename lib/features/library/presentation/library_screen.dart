@@ -5,8 +5,8 @@ import '../../../core/utils/formatters.dart';
 import '../../player/presentation/player_providers.dart';
 import '../domain/album.dart';
 import '../domain/artist.dart';
-import '../domain/folder.dart';
 import '../domain/song.dart';
+import 'folder_browser.dart';
 import 'library_providers.dart';
 import 'song_collection_screen.dart';
 import 'widgets/artwork_image.dart';
@@ -124,7 +124,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                           onRefresh: () => ref.refresh(songsProvider.future),
                           child: SongListView(songs: all),
                         ),
-                        _FoldersList(folders: ref.watch(foldersProvider)),
+                        const _FoldersTab(),
                         _AlbumsGrid(albums: ref.watch(albumsProvider)),
                         _ArtistsList(artists: ref.watch(artistsProvider)),
                       ],
@@ -183,78 +183,22 @@ class _SearchResults extends StatelessWidget {
   }
 }
 
-/// Carpetas del dispositivo que contienen música, como en un explorador.
-class _FoldersList extends StatelessWidget {
-  const _FoldersList({required this.folders});
-
-  final List<Folder> folders;
+/// Pestaña de carpetas: muestra la raíz del árbol; el resto se navega
+/// entrando en cada subcarpeta.
+class _FoldersTab extends ConsumerWidget {
+  const _FoldersTab();
 
   @override
-  Widget build(BuildContext context) {
-    if (folders.isEmpty) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final root = ref.watch(folderTreeProvider);
+    if (root == null) {
       return const EmptyState(
         icon: Icons.folder_off_outlined,
         title: 'Sin carpetas',
         message: 'No se pudo determinar la carpeta de las canciones.',
       );
     }
-    final scheme = Theme.of(context).colorScheme;
-    return ListView.builder(
-      padding: const EdgeInsets.only(top: 4, bottom: 16),
-      itemCount: folders.length,
-      itemExtent: 72,
-      itemBuilder: (context, index) {
-        final folder = folders[index];
-        final count = songCountLabel(folder.songs.length);
-        final subtitle = folder.location.isEmpty
-            ? count
-            : '${folder.location} · $count';
-        return ListTile(
-          leading: Stack(
-            alignment: Alignment.bottomRight,
-            children: [
-              ArtworkImage(songId: folder.cover.id, size: 48),
-              // Distintivo para diferenciarla de un álbum o una canción.
-              Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  color: scheme.surface,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(8),
-                    bottomRight: Radius.circular(8),
-                  ),
-                ),
-                child: Icon(
-                  Icons.folder_rounded,
-                  size: 16,
-                  color: scheme.primary,
-                ),
-              ),
-            ],
-          ),
-          title: Text(
-            folder.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Text(
-            subtitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: scheme.onSurfaceVariant),
-          ),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => SongCollectionScreen(
-                title: folder.name,
-                subtitle: subtitle,
-                songs: folder.songs,
-              ),
-            ),
-          ),
-        );
-      },
-    );
+    return FolderContentsView(folder: root);
   }
 }
 

@@ -62,7 +62,7 @@ final _library = [
       artistId: i % 3,
       track: i,
       folder:
-          '/storage/emulated/0/Music/${const ['Rock', 'Salsa', 'Para estudiar'][i % 3]}',
+          '/storage/emulated/0/Music/${const ['Rock', 'Rock/Directos', 'Para estudiar'][i % 3]}',
     ),
 ];
 
@@ -205,6 +205,15 @@ void main() {
     await settle(tester);
     expect(find.text('Para estudiar'), findsOneWidget);
     await shot(tester, shotKey, '10_carpetas_oscuro');
+
+    // Navegación anidada: Rock contiene la subcarpeta Directos.
+    await tester.tap(find.text('Rock'));
+    await settle(tester);
+    expect(find.text('Directos'), findsOneWidget);
+    expect(find.text('Music/Rock'), findsOneWidget);
+    await shot(tester, shotKey, '11_carpeta_rock');
+    await tester.pageBack();
+    await settle(tester);
 
     await tester.tap(find.text('Álbumes'));
     await settle(tester);

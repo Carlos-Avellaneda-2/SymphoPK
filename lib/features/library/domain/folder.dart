@@ -2,28 +2,45 @@ import 'package:flutter/foundation.dart';
 
 import 'song.dart';
 
-/// Carpeta del dispositivo que contiene canciones directamente.
+/// Carpeta del dispositivo dentro del árbol de música: puede contener
+/// subcarpetas, canciones o ambas cosas.
 @immutable
 class Folder {
   const Folder({
     required this.path,
     required this.name,
-    required this.location,
+    required this.subfolders,
     required this.songs,
+    required this.allSongs,
   });
 
-  /// Ruta absoluta de la carpeta.
+  /// Ruta absoluta; `/` para la raíz del sistema de archivos.
   final String path;
 
   /// Último segmento de la ruta, p. ej. `Rock`.
   final String name;
 
-  /// Ruta de la carpeta que la contiene, ya abreviada para mostrarla
-  /// (p. ej. `Music`); vacía si cuelga de la raíz del almacenamiento.
-  final String location;
+  /// Subcarpetas que contienen música (directa o más adentro), por nombre.
+  final List<Folder> subfolders;
 
-  /// Canciones ordenadas por título.
+  /// Canciones situadas directamente en esta carpeta, por título.
   final List<Song> songs;
 
-  Song get cover => songs.first;
+  /// Todas las canciones del subárbol: primero las propias y después las de
+  /// cada subcarpeta, en el orden en que se muestran.
+  final List<Song> allSongs;
+
+  /// Canción cuya carátula representa a la carpeta.
+  Song? get cover => allSongs.isEmpty ? null : allSongs.first;
+
+  /// Busca en el subárbol la carpeta con esa ruta.
+  Folder? find(String target) {
+    if (target == path) return this;
+    for (final child in subfolders) {
+      if (target == child.path || target.startsWith('${child.path}/')) {
+        return child.find(target);
+      }
+    }
+    return null;
+  }
 }

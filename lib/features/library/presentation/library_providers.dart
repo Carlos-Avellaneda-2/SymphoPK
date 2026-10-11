@@ -36,8 +36,15 @@ final artistsProvider = Provider<List<Artist>>(
   (ref) => groupArtists(ref.watch(songsProvider).value ?? const []),
 );
 
-final foldersProvider = Provider<List<Folder>>(
-  (ref) => groupFolders(ref.watch(songsProvider).value ?? const []),
+/// Raíz del árbol de carpetas con música; `null` si no hay ninguna.
+final folderTreeProvider = Provider<Folder?>(
+  (ref) => buildFolderTree(ref.watch(songsProvider).value ?? const []),
+);
+
+/// Carpeta en una ruta concreta. Se resuelve contra el árbol actual para que
+/// las pantallas abiertas reflejen un reescaneo.
+final folderProvider = Provider.family<Folder?, String>(
+  (ref, path) => ref.watch(folderTreeProvider)?.find(path),
 );
 
 /// Texto de búsqueda de la biblioteca.

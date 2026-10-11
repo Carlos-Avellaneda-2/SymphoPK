@@ -44,28 +44,65 @@ List<Artist> groupArtists(List<Song> songs) {
   return artists..sort((a, b) => _byName(a.name, b.name));
 }
 
-/// Agrupa por la carpeta que contiene cada archivo, como hacen los
-/// reproductores basados en carpetas. Solo aparecen las carpetas con
-/// canciones dentro (no las intermedias) y se ordenan por nombre.
-List<Folder> groupFolders(List<Song> songs) {
-  final groups = <String, List<Song>>{};
+/// Construye el árbol de carpetas que contienen música, para navegarlo como
+/// en un explorador de archivos.
+///
+/// La raíz devuelta es la primera carpeta «interesante»: se saltan los
+/// niveles superiores que solo contienen otra carpeta (por ejemplo
+/// `/storage/emulated/0`), de modo que se empieza directamente donde la
+/// música se ramifica. Devuelve `null` si ninguna canción tiene carpeta.
+Folder? buildFolderTree(List<Song> songs) {
+  final root = _FolderBuilder('/');
+  var any = false;
   for (final song in songs) {
     if (song.folder.isEmpty) continue;
-    groups.putIfAbsent(song.folder, () => []).add(song);
+    any = true;
+    var node = root;
+    for (final segment in song.folder.split('/')) {
+      if (segment.isEmpty) continue;
+      node = node.children.putIfAbsent(
+        segment,
+        () => _FolderBuilder(
+          node.path == '/' ? '/$segment' : '${node.path}/$segment',
+        ),
+      );
+    }
+    node.songs.add(song);
   }
-  final folders = [
-    for (final entry in groups.entries)
-      Folder(
-        path: entry.key,
-        name: folderName(entry.key),
-        location: folderLocation(entry.key),
-        songs: entry.value..sort((a, b) => _byName(a.title, b.title)),
-      ),
-  ];
-  return folders..sort((a, b) {
-    final byName = _byName(a.name, b.name);
-    return byName != 0 ? byName : a.path.compareTo(b.path);
-  });
+  if (!any) return null;
+
+  var folder = root.build();
+  while (folder.songs.isEmpty && folder.subfolders.length == 1) {
+    folder = folder.subfolders.single;
+  }
+  return folder;
+}
+
+class _FolderBuilder {
+  _FolderBuilder(this.path);
+
+  final String path;
+  final children = <String, _FolderBuilder>{};
+  final songs = <Song>[];
+
+  Folder build() {
+    final subfolders = [for (final child in children.values) child.build()]
+      ..sort((a, b) {
+        final byName = _byName(a.name, b.name);
+        return byName != 0 ? byName : a.path.compareTo(b.path);
+      });
+    final ownSongs = songs..sort((a, b) => _byName(a.title, b.title));
+    return Folder(
+      path: path,
+      name: folderName(path),
+      subfolders: List.unmodifiable(subfolders),
+      songs: List.unmodifiable(ownSongs),
+      allSongs: List.unmodifiable([
+        ...ownSongs,
+        for (final child in subfolders) ...child.allSongs,
+      ]),
+    );
+  }
 }
 
 /// Último segmento de una ruta: `/storage/emulated/0/Music/Rock` -> `Rock`.
@@ -74,14 +111,12 @@ String folderName(String path) {
   return segments.isEmpty ? path : segments.last;
 }
 
-/// Carpeta contenedora, sin el prefijo del almacenamiento interno:
-/// `/storage/emulated/0/Music/Rock` -> `Music`. Las tarjetas SD conservan su
-/// identificador para distinguirlas (`/storage/1A2B-3C4D/Music/Rock` ->
-/// `1A2B-3C4D/Music`).
-String folderLocation(String path) {
+/// Ruta abreviada para mostrarla, sin el prefijo del almacenamiento interno:
+/// `/storage/emulated/0/Music/Rock` -> `Music/Rock`. Las tarjetas SD
+/// conservan su identificador (`/storage/1A2B-3C4D/Music` ->
+/// `1A2B-3C4D/Music`). La raíz del almacenamiento queda vacía.
+String folderDisplayPath(String path) {
   final segments = path.split('/').where((s) => s.isNotEmpty).toList();
-  if (segments.isEmpty) return '';
-  segments.removeLast();
   if (segments.length >= 3 &&
       segments[0] == 'storage' &&
       segments[1] == 'emulated') {
