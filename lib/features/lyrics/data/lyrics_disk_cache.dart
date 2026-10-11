@@ -123,10 +123,15 @@ class LyricsDiskCache {
   }
 }
 
+const String _cacheKeyVersion = 'v2';
+
 /// Clave de caché de una canción. Se basa en sus datos y no en su id de
 /// MediaStore, que puede cambiar si el sistema reindexa la biblioteca.
 String lyricsCacheKey(Song song) {
   final text = [
+    // Al cambiar el criterio de selección se cambia la versión, para no
+    // seguir sirviendo letras elegidas con el criterio anterior.
+    _cacheKeyVersion,
     song.artist,
     song.title,
     song.album,

@@ -4,6 +4,24 @@ Todas las versiones publicadas de SymphoPK. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones,
 [SemVer](https://semver.org/lang/es/).
 
+## [1.3.1] - 2026-10-10
+
+### Corregido
+
+- **Letras de LRCLIB mal sincronizadas** cuando una canción tiene varias
+  versiones. Antes se aceptaba la primera coincidencia que devolvía el
+  servicio, que admite ±2 segundos y no siempre es la más cercana. Ahora se
+  reúnen las versiones disponibles y se elige por título, artista y
+  duración, comparando con precisión de milisegundos.
+- La duración se enviaba truncada a segundos; ahora se redondea.
+- Los resultados de otro título u otro artista se descartan aunque su
+  duración coincida.
+
+### Cambiado
+
+- Las letras guardadas en la caché temporal con el criterio anterior dejan
+  de usarse, para que se vuelvan a elegir con el nuevo.
+
 ## [1.3.0] - 2026-10-10
 
 ### Añadido
@@ -63,6 +81,7 @@ Todas las versiones publicadas de SymphoPK. El formato sigue
 - Recuerda la última canción y la posición al reabrir.
 - Tema claro y oscuro según el sistema.
 
+[1.3.1]: https://github.com/Carlos-Avellaneda-2/SymphoPK/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/Carlos-Avellaneda-2/SymphoPK/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/Carlos-Avellaneda-2/SymphoPK/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Carlos-Avellaneda-2/SymphoPK/compare/v1.0.0...v1.1.0

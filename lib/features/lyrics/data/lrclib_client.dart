@@ -55,35 +55,81 @@ class LrclibClient implements RemoteLyricsSource {
   Future<Lyrics?> fetch(Song song) async {
     final artist = song.hasKnownArtist ? song.artist : null;
     final album = song.hasKnownAlbum ? song.album : null;
+    final durationKnown = song.duration > Duration.zero;
+    // De una canción suele haber muchas versiones con tiempos distintos:
+    // se reúnen candidatos de varias consultas y se elige por duración.
+    final candidates = <LrclibRecord>[];
 
-    // 1) Coincidencia exacta. Necesita el artista; sin él solo cabe buscar.
+    LrclibRecord? best() => selectBestMatch(
+      candidates,
+      title: song.title,
+      artist: artist,
+      duration: song.duration,
+    );
+    bool isExact(LrclibRecord? record) =>
+        record != null &&
+        record.hasSyncedLyrics &&
+        (!durationKnown ||
+            (record.duration - song.duration).abs() <= exactMatchTolerance);
+
+    // 1) Coincidencia directa. Necesita el artista. Ojo: el servicio admite
+    //    ±2 s y devuelve *una* de las versiones que encajan, no la más
+    //    cercana, así que solo se da por buena si la duración casi coincide.
     if (artist != null) {
-      final exact = await _get('/api/get', {
+      final body = await _get('/api/get', {
         'track_name': song.title,
         'artist_name': artist,
         'album_name': ?album,
-        if (song.duration > Duration.zero)
-          'duration': '${song.duration.inSeconds}',
+        // Redondeada: truncarla desplazaría la búsqueda casi un segundo.
+        if (durationKnown)
+          'duration': '${(song.duration.inMilliseconds / 1000).round()}',
       });
-      if (exact != null) {
-        final lyrics = _decode(() => LrclibRecord.fromJson(jsonDecode(exact)))
-            .toLyrics();
-        if (lyrics != null) return lyrics;
+      if (body != null) {
+        final record = _decode(() => LrclibRecord.fromJson(jsonDecode(body)));
+        if (isExact(record)) return record.toLyrics();
+        candidates.add(record);
       }
     }
 
-    // 2) Búsqueda: se elige el resultado de duración más parecida.
-    final found = await _get('/api/search', {
-      'track_name': song.title,
-      'artist_name': ?artist,
-    });
-    if (found == null) return null;
-    final records = _decode(() {
-      final list = jsonDecode(found);
+    // 2) Búsqueda por título y artista principal.
+    final primaryArtist = artist == null
+        ? null
+        : splitArtists(artist).firstOrNull;
+    candidates.addAll(
+      await _search({'track_name': song.title, 'artist_name': ?primaryArtist}),
+    );
+    final afterFields = best();
+    if (isExact(afterFields)) return afterFields!.toLyrics();
+
+    // 3) Búsqueda de texto libre: cada búsqueda devuelve como mucho 20
+    //    registros y esta suele traer versiones que la anterior no. Si
+    //    falla, vale lo que ya se tenía.
+    try {
+      candidates.addAll(
+        await _search({
+          'q': [
+            normalizeForMatch(song.title),
+            if (primaryArtist != null) normalizeForMatch(primaryArtist),
+          ].join(' '),
+        }),
+      );
+    } on LyricsNetworkException {
+      if (afterFields == null) rethrow;
+    } on LyricsServiceException {
+      if (afterFields == null) rethrow;
+    }
+    return best()?.toLyrics();
+  }
+
+  /// Resultados de `/api/search`; lista vacía si no hay ninguno.
+  Future<List<LrclibRecord>> _search(Map<String, String> query) async {
+    final body = await _get('/api/search', query);
+    if (body == null) return const [];
+    return _decode(() {
+      final list = jsonDecode(body);
       if (list is! List) throw const FormatException('Se esperaba una lista');
       return [for (final item in list) LrclibRecord.fromJson(item)];
     });
-    return selectBestMatch(records, song.duration)?.toLyrics();
   }
 
   /// Cuerpo de la respuesta, o `null` si el servicio contesta 404.
