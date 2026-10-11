@@ -114,7 +114,7 @@ El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
 
 | Versión | Cambios |
 | --- | --- |
-| 1.3.0 | Ecualizador, letras sincronizadas y pantalla de ajustes con selección de tema |
+| [1.3.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.3.0) | Ecualizador, letras sincronizadas y pantalla de ajustes con selección de tema |
 | [1.2.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.2.0) | Navegación anidada por carpetas y widgets de pantalla de inicio (4×1 y 3×2) |
 | [1.1.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.1.0) | Vista de la biblioteca por carpetas |
 | [1.0.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.0.0) | Primera versión: biblioteca, reproductor, segundo plano, listas, favoritos y sesión |
