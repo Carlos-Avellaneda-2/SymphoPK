@@ -46,8 +46,8 @@ class LyricsPanel extends ConsumerWidget {
         icon: Icons.lyrics_outlined,
         title: 'Letra no encontrada',
         message:
-            'No hay un archivo .lrc junto a la canción, no trae letra '
-            'incrustada y LRCLIB no la tiene.',
+            'No hay un archivo .lrc junto a la canción, LRCLIB no la tiene '
+            'y el archivo no trae letra incrustada.',
       ),
       LyricsOffline() => _Message(
         icon: Icons.wifi_off_rounded,

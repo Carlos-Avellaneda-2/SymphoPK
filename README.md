@@ -24,8 +24,8 @@ sesión.
   carátula, título y controles de anterior, play/pausa y siguiente.
 - **Ecualizador** con las bandas del dispositivo, preajustes, refuerzo de
   volumen y configuración persistente.
-- **Letras sincronizadas**: desde un archivo `.lrc`, desde los metadatos
-  del archivo o desde LRCLIB, con la línea actual resaltada.
+- **Letras sincronizadas**: desde un archivo `.lrc`, desde LRCLIB o desde
+  los metadatos del archivo, con la línea actual resaltada.
 - **Ajustes**: tema (sistema, claro u oscuro), ecualizador y opciones de
   letras.
 - **Reproductor**: play/pausa, siguiente, anterior, barra de progreso con
@@ -87,12 +87,15 @@ carátula y la letra. La app la busca en este orden:
 
 1. Un archivo `.lrc` con el mismo nombre que la canción y en su misma
    carpeta.
-2. La letra incrustada en los metadatos del archivo.
-3. [LRCLIB](https://lrclib.net), un servicio gratuito y sin registro. De una
+2. [LRCLIB](https://lrclib.net), un servicio gratuito y sin registro. De una
    misma canción suele haber varias versiones con tiempos distintos; se
    elige la que coincide en título y artista y cuya duración es la más
    cercana a la de tu archivo (como mucho 3 segundos de diferencia). Los
    registros con tiempos claramente inventados se descartan.
+3. La letra incrustada en los metadatos del archivo. Va la última porque
+   casi siempre es texto sin tiempos; se usa si LRCLIB no tiene la canción,
+   si no hay conexión o si la incrustada está sincronizada y la de LRCLIB
+   no.
 
 Si la letra tiene marcas de tiempo, la línea actual se resalta y queda
 centrada; tocar una línea salta a ese momento. Al desplazar a mano, el
@@ -110,13 +113,14 @@ caché.
 
 ## Estado
 
-Versión actual: **1.3.1**. Todas las funciones se han probado a mano en un
+Versión actual: **1.3.2**. Todas las funciones se han probado a mano en un
 teléfono Android real, además de los tests automáticos; la lista de lo
 comprobado está en [Probado en un dispositivo real](#probado-en-un-dispositivo-real).
 El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
 
 | Versión | Cambios |
 | --- | --- |
+| [1.3.2](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.3.2) | Las letras de LRCLIB tienen prioridad sobre la incrustada en el archivo |
 | [1.3.1](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.3.1) | Las letras de LRCLIB se eligen por título, artista y duración, y se descartan las de tiempos inventados |
 | [1.3.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.3.0) | Ecualizador, letras sincronizadas y pantalla de ajustes con selección de tema |
 | [1.2.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.2.0) | Navegación anidada por carpetas y widgets de pantalla de inicio (4×1 y 3×2) |
@@ -327,7 +331,7 @@ mano y funcionan correctamente:
 - **Ecualizador**: los preajustes y los deslizadores cambian el sonido al
   instante y la configuración se conserva al reabrir la app.
 - **Letras**: se cargan desde un archivo `.lrc` (tras conceder la carpeta),
-  desde los metadatos del archivo y desde LRCLIB; sin conexión aparece el
+  desde LRCLIB y desde los metadatos del archivo; sin conexión aparece el
   aviso correspondiente.
 - **Tema**: el cambio entre sistema, claro y oscuro es inmediato y se
   conserva al reabrir.

@@ -193,42 +193,189 @@ void main() {
     late _FakeRemote remote;
     late bool diskEnabled;
 
-    LyricsRepository repository({List<LocalLyricsSource> local = const []}) =>
-        LyricsRepository(
-          localSources: local,
-          remote: remote,
-          diskCache: cache(),
-          diskCacheEnabled: () => diskEnabled,
-        );
+    LyricsRepository repository({
+      List<LocalLyricsSource> local = const [],
+      List<LocalLyricsSource> fallback = const [],
+    }) => LyricsRepository(
+      localSources: local,
+      fallbackSources: fallback,
+      remote: remote,
+      diskCache: cache(),
+      diskCacheEnabled: () => diskEnabled,
+    );
 
     setUp(() {
       remote = _FakeRemote();
       diskEnabled = true;
     });
 
-    test(
-      'respeta la prioridad: .lrc, incrustada y por último LRCLIB',
-      () async {
+    group('prioridad de las fuentes', () {
+      const plainEmbedded = Lyrics(
+        origin: LyricsOrigin.embedded,
+        plainText: 'letra del archivo',
+      );
+      const plainOnline = Lyrics(
+        origin: LyricsOrigin.lrclib,
+        plainText: 'letra de LRCLIB',
+      );
+
+      Lyrics found(LyricsResult result) => (result as LyricsFound).lyrics;
+
+      test('el .lrc va antes que todo y no consulta la red', () async {
         final lrc = _FakeLocal({
           1: synced('lrc', origin: LyricsOrigin.lrcFile),
         });
+        final embedded = _FakeLocal({1: plainEmbedded});
+        remote.answer = (_) => synced('remota');
+        final repo = repository(local: [lrc], fallback: [embedded]);
+
+        expect(
+          found(await repo.lyricsFor(song(1))).origin,
+          LyricsOrigin.lrcFile,
+        );
+        expect(remote.calls, 0);
+        expect(embedded.calls, 0);
+      });
+
+      test('LRCLIB sincronizada gana a la letra incrustada', () async {
+        // El caso que motivó el cambio: el archivo trae la letra como texto
+        // y LRCLIB la tiene sincronizada.
+        final embedded = _FakeLocal({1: plainEmbedded});
+        remote.answer = (_) => synced('remota');
+        final repo = repository(fallback: [embedded]);
+
+        final lyrics = found(await repo.lyricsFor(song(1)));
+        expect(lyrics.origin, LyricsOrigin.lrclib);
+        expect(lyrics.isSynced, isTrue);
+        expect(embedded.calls, 0, reason: 'no hace falta leer el archivo');
+      });
+
+      test('gana también a una incrustada sincronizada', () async {
         final embedded = _FakeLocal({
           1: synced('incrustada', origin: LyricsOrigin.embedded),
-          2: synced('incrustada', origin: LyricsOrigin.embedded),
         });
         remote.answer = (_) => synced('remota');
-        final repo = repository(local: [lrc, embedded]);
+        final repo = repository(fallback: [embedded]);
+        expect(
+          found(await repo.lyricsFor(song(1))).origin,
+          LyricsOrigin.lrclib,
+        );
+      });
 
-        LyricsOrigin origin(LyricsResult result) =>
-            (result as LyricsFound).lyrics.origin;
-        expect(origin(await repo.lyricsFor(song(1))), LyricsOrigin.lrcFile);
-        expect(origin(await repo.lyricsFor(song(2))), LyricsOrigin.embedded);
-        expect(remote.calls, 0, reason: 'no hace falta la red');
-        expect(origin(await repo.lyricsFor(song(3))), LyricsOrigin.lrclib);
-        expect(remote.calls, 1);
-      },
-    );
+      test('si LRCLIB no la tiene, usa la incrustada', () async {
+        final embedded = _FakeLocal({1: plainEmbedded});
+        remote.answer = (_) => null;
+        final repo = repository(fallback: [embedded]);
 
+        final lyrics = found(await repo.lyricsFor(song(1)));
+        expect(lyrics.origin, LyricsOrigin.embedded);
+        expect(lyrics.plainText, 'letra del archivo');
+      });
+
+      test(
+        'si LRCLIB solo tiene texto, una incrustada con tiempos gana',
+        () async {
+          final embedded = _FakeLocal({
+            1: synced('incrustada', origin: LyricsOrigin.embedded),
+          });
+          remote.answer = (_) => plainOnline;
+          final repo = repository(fallback: [embedded]);
+          expect(
+            found(await repo.lyricsFor(song(1))).origin,
+            LyricsOrigin.embedded,
+          );
+        },
+      );
+
+      test(
+        'entre dos letras de solo texto se queda con la de LRCLIB',
+        () async {
+          final embedded = _FakeLocal({1: plainEmbedded});
+          remote.answer = (_) => plainOnline;
+          final repo = repository(fallback: [embedded]);
+          expect(
+            found(await repo.lyricsFor(song(1))).origin,
+            LyricsOrigin.lrclib,
+          );
+        },
+      );
+
+      test('si LRCLIB la marca instrumental pero el archivo trae letra, la muestra', () async {
+        final embedded = _FakeLocal({1: plainEmbedded});
+        remote.answer = (_) =>
+            const Lyrics(origin: LyricsOrigin.lrclib, instrumental: true);
+        final repo = repository(fallback: [embedded]);
+        expect(
+          found(await repo.lyricsFor(song(1))).origin,
+          LyricsOrigin.embedded,
+        );
+      });
+
+      test(
+        'sin conexión muestra la incrustada y reintenta más tarde',
+        () async {
+          final embedded = _FakeLocal({1: plainEmbedded});
+          remote.answer = (_) => throw const LyricsNetworkException('sin red');
+          final repo = repository(fallback: [embedded]);
+
+          expect(
+            found(await repo.lyricsFor(song(1))).origin,
+            LyricsOrigin.embedded,
+          );
+
+          // Al volver la conexión debe encontrar la sincronizada.
+          remote.answer = (_) => synced('remota');
+          final later = found(await repo.lyricsFor(song(1)));
+          expect(later.origin, LyricsOrigin.lrclib);
+          expect(later.isSynced, isTrue);
+        },
+      );
+
+      test('si el servicio falla también recurre a la incrustada', () async {
+        final embedded = _FakeLocal({1: plainEmbedded});
+        remote.answer = (_) => throw const LyricsServiceException('HTTP 500');
+        final repo = repository(fallback: [embedded]);
+        expect(
+          found(await repo.lyricsFor(song(1))).origin,
+          LyricsOrigin.embedded,
+        );
+      });
+
+      test(
+        'sin conexión y sin incrustada sigue avisando de la conexión',
+        () async {
+          remote.answer = (_) => throw const LyricsNetworkException('sin red');
+          final repo = repository(fallback: [_FakeLocal({})]);
+          expect(await repo.lyricsFor(song(1)), isA<LyricsOffline>());
+        },
+      );
+
+      test('sin ninguna fuente con letra, no encontrada', () async {
+        final repo = repository(fallback: [_FakeLocal({})]);
+        expect(await repo.lyricsFor(song(1)), isA<LyricsNotFound>());
+      });
+
+      test('la letra incrustada nunca se copia a la caché en disco', () async {
+        final embedded = _FakeLocal({1: plainEmbedded});
+        await repository(fallback: [embedded]).lyricsFor(song(1));
+        expect(await cache().sizeBytes(), 0);
+      });
+
+      test('una letra de LRCLIB ya en caché evita leer el archivo', () async {
+        remote.answer = (_) => synced('remota');
+        await repository().lyricsFor(song(1, title: 'Tema'));
+
+        // Nueva sesión, sin red: la caché en disco basta.
+        final embedded = _FakeLocal({1: plainEmbedded});
+        remote.answer = (_) => throw const LyricsNetworkException('sin red');
+        final lyrics = found(
+          await repository(fallback: [embedded])
+              .lyricsFor(song(1, title: 'Tema')),
+        );
+        expect(lyrics.origin, LyricsOrigin.lrclib);
+        expect(embedded.calls, 0);
+      });
+    });
     test('la memoria evita repetir la búsqueda en la misma sesión', () async {
       final local = _FakeLocal({});
       remote.answer = (_) => synced('remota');

@@ -28,10 +28,13 @@ final lyricsRepositoryProvider = Provider<LyricsRepository>((ref) {
   final client = http.Client();
   ref.onDispose(client.close);
   return LyricsRepository(
+    // El .lrc lo puso el usuario a propósito: va antes que cualquier otra.
     localSources: [
       LrcFileLyricsSource(ref.watch(lyricsFolderAccessProvider).readFile),
-      EmbeddedLyricsSource(),
     ],
+    // La letra incrustada suele ser texto sin tiempos: solo si LRCLIB no
+    // ofrece nada mejor.
+    fallbackSources: [EmbeddedLyricsSource()],
     remote: LrclibClient(client),
     diskCache: ref.watch(lyricsDiskCacheProvider),
     // Se consulta en cada uso para respetar «No guardar letras» al instante.
