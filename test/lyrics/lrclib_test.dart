@@ -320,6 +320,134 @@ void main() {
     });
   });
 
+  // Tiempos tomados de dos registros reales de LRCLIB para la misma canción
+  // de 213 s: uno sincronizado de verdad y otro con tiempos inventados.
+  group('hasReliableSync', () {
+    const good = '''
+[00:16.88] See, right now, I need you
+[00:21.10] You up now? I see you
+[00:25.45] Slow down, be cool
+[00:29.54] It's yours now, keep it
+[00:33.75] I need you right now
+[00:37.77] If I get you
+[00:41.97] And, oh, it's hard to see you
+[00:46.34] Oh, it's hard to leave you
+[00:50.57] All this time
+[03:17.97] Última línea
+''';
+    const machineMade = '''
+[00:00.00] See, right now, I need you
+[00:05.20] You up now, I see you
+[00:10.40] Slow down, be cool
+[00:15.60] It's yours now, keep it
+[00:20.80] I need you right now
+[00:26.20] If I get you
+[00:33.00] And, oh, it's hard to see you
+[00:38.80] Oh, it's hard to leave you
+[00:44.00] All this time
+[00:49.20] Otra línea
+[00:54.40] Otra más
+''';
+    const song = Duration(milliseconds: 213499);
+
+    LrclibRecord withSync(String synced, {num seconds = 213}) => LrclibRecord(
+      trackName: 'Tema',
+      artistName: 'Grupo',
+      duration: Duration(milliseconds: (seconds * 1000).round()),
+      syncedLyrics: synced,
+      plainLyrics: 'See, right now, I need you\nYou up now',
+    );
+
+    test('acepta una sincronización hecha con el audio', () {
+      expect(hasReliableSync(withSync(good), song), isTrue);
+    });
+
+    test('rechaza tiempos repartidos a intervalos idénticos', () {
+      expect(hasReliableSync(withSync(machineMade), song), isFalse);
+    });
+
+    test('rechaza una letra que sigue después del final de la canción', () {
+      const overrun = '[00:10.00]a\n[01:00.37]b\n[04:20.20]fuera';
+      expect(hasReliableSync(withSync(overrun), song), isFalse);
+      // La misma letra encaja en una canción más larga.
+      expect(
+        hasReliableSync(withSync(overrun), const Duration(minutes: 5)),
+        isTrue,
+      );
+    });
+
+    test('sin duración de la canción usa la del registro', () {
+      const overrun = '[00:10.00]a\n[04:20.20]fuera';
+      expect(hasReliableSync(withSync(overrun), Duration.zero), isFalse);
+      expect(
+        hasReliableSync(withSync(overrun, seconds: 300), Duration.zero),
+        isTrue,
+      );
+    });
+
+    test('no juzga los intervalos de letras muy cortas', () {
+      const short = '[00:05.00]a\n[00:10.00]b\n[00:15.00]c\n[00:20.00]d';
+      expect(hasReliableSync(withSync(short), song), isTrue);
+    });
+
+    test('un ritmo constante con variaciones de centésimas es fiable', () {
+      const steady = '''
+[00:10.00]a
+[00:14.22]b
+[00:18.57]c
+[00:22.66]d
+[00:26.87]e
+[00:30.89]f
+[00:35.09]g
+[00:39.46]h
+[00:43.69]i
+[00:47.90]j
+''';
+      expect(hasReliableSync(withSync(steady), song), isTrue);
+    });
+
+    test('sin letra sincronizada no hay nada fiable', () {
+      expect(
+        hasReliableSync(record(213, synced: false, plain: 'x'), song),
+        isFalse,
+      );
+    });
+
+    test('la selección prefiere una fiable a una inventada más cercana', () {
+      final best = selectBestMatch(
+        [withSync(machineMade, seconds: 213.5), withSync(good, seconds: 214)],
+        title: 'Tema',
+        artist: 'Grupo',
+        duration: song,
+      );
+      expect(best!.syncedLyrics, good);
+    });
+
+    test('si solo hay inventadas se muestra como texto, sin tiempos', () {
+      final best = selectBestMatch(
+        [withSync(machineMade)],
+        title: 'Tema',
+        artist: 'Grupo',
+        duration: song,
+      )!;
+      final lyrics = best.toLyrics(songDuration: song)!;
+      expect(lyrics.isSynced, isFalse);
+      expect(lyrics.plainText, startsWith('See, right now, I need you'));
+    });
+
+    test('sin texto plano, el de la sincronizada no fiable sirve de texto', () {
+      final lyrics = const LrclibRecord(
+        trackName: 'Tema',
+        artistName: 'Grupo',
+        duration: Duration(seconds: 213),
+        syncedLyrics: machineMade,
+      ).toLyrics(songDuration: song)!;
+      expect(lyrics.isSynced, isFalse);
+      expect(lyrics.plainText, contains('Slow down, be cool'));
+      expect(lyrics.plainText, isNot(contains('[00:')));
+    });
+  });
+
   group('LrclibRecord', () {
     test('lee nombres, duración con decimales y campos nulos', () {
       final parsed = LrclibRecord.fromJson(json(200.6));

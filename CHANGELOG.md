@@ -13,6 +13,12 @@ Todas las versiones publicadas de SymphoPK. El formato sigue
   servicio, que admite ±2 segundos y no siempre es la más cercana. Ahora se
   reúnen las versiones disponibles y se elige por título, artista y
   duración, comparando con precisión de milisegundos.
+- **Letras con tiempos inventados.** LRCLIB tiene registros cuyas marcas
+  de tiempo no corresponden al audio: líneas repartidas a intervalos
+  idénticos desde el segundo cero, o que siguen después del final de la
+  canción. Ahora se detectan y se descartan en favor de una versión
+  sincronizada de verdad; si no hay otra, la letra se muestra como texto
+  en lugar de resaltar la línea equivocada.
 - La duración se enviaba truncada a segundos; ahora se redondea.
 - Los resultados de otro título u otro artista se descartan aunque su
   duración coincida.

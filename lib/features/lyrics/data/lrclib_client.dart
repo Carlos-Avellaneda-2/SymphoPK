@@ -66,9 +66,11 @@ class LrclibClient implements RemoteLyricsSource {
       artist: artist,
       duration: song.duration,
     );
+    Lyrics? lyricsOf(LrclibRecord? record) =>
+        record?.toLyrics(songDuration: song.duration);
     bool isExact(LrclibRecord? record) =>
         record != null &&
-        record.hasSyncedLyrics &&
+        hasReliableSync(record, song.duration) &&
         (!durationKnown ||
             (record.duration - song.duration).abs() <= exactMatchTolerance);
 
@@ -86,7 +88,7 @@ class LrclibClient implements RemoteLyricsSource {
       });
       if (body != null) {
         final record = _decode(() => LrclibRecord.fromJson(jsonDecode(body)));
-        if (isExact(record)) return record.toLyrics();
+        if (isExact(record)) return lyricsOf(record);
         candidates.add(record);
       }
     }
@@ -99,7 +101,7 @@ class LrclibClient implements RemoteLyricsSource {
       await _search({'track_name': song.title, 'artist_name': ?primaryArtist}),
     );
     final afterFields = best();
-    if (isExact(afterFields)) return afterFields!.toLyrics();
+    if (isExact(afterFields)) return lyricsOf(afterFields);
 
     // 3) Búsqueda de texto libre: cada búsqueda devuelve como mucho 20
     //    registros y esta suele traer versiones que la anterior no. Si
@@ -118,7 +120,7 @@ class LrclibClient implements RemoteLyricsSource {
     } on LyricsServiceException {
       if (afterFields == null) rethrow;
     }
-    return best()?.toLyrics();
+    return lyricsOf(best());
   }
 
   /// Resultados de `/api/search`; lista vacía si no hay ninguno.

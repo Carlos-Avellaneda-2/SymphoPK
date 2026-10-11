@@ -91,7 +91,8 @@ carátula y la letra. La app la busca en este orden:
 3. [LRCLIB](https://lrclib.net), un servicio gratuito y sin registro. De una
    misma canción suele haber varias versiones con tiempos distintos; se
    elige la que coincide en título y artista y cuya duración es la más
-   cercana a la de tu archivo (como mucho 3 segundos de diferencia).
+   cercana a la de tu archivo (como mucho 3 segundos de diferencia). Los
+   registros con tiempos claramente inventados se descartan.
 
 Si la letra tiene marcas de tiempo, la línea actual se resalta y queda
 centrada; tocar una línea salta a ese momento. Al desplazar a mano, el
@@ -116,7 +117,7 @@ El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
 
 | Versión | Cambios |
 | --- | --- |
-| [1.3.1](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.3.1) | Las letras de LRCLIB se eligen por título, artista y duración |
+| [1.3.1](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.3.1) | Las letras de LRCLIB se eligen por título, artista y duración, y se descartan las de tiempos inventados |
 | [1.3.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.3.0) | Ecualizador, letras sincronizadas y pantalla de ajustes con selección de tema |
 | [1.2.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.2.0) | Navegación anidada por carpetas y widgets de pantalla de inicio (4×1 y 3×2) |
 | [1.1.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.1.0) | Vista de la biblioteca por carpetas |

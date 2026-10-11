@@ -45,16 +45,79 @@ class LrclibRecord {
     );
   }
 
-  /// Letra del registro, prefiriendo la sincronizada. `null` si no aporta
-  /// nada.
-  Lyrics? toLyrics() {
+  /// Letra del registro. `null` si no aporta nada.
+  ///
+  /// Se usa la sincronizada solo si sus tiempos son fiables para una
+  /// canción de duración [songDuration] (ver [hasReliableSync]); si no, se
+  /// muestra como texto: es preferible una letra sin seguimiento a una que
+  /// resalta la línea equivocada.
+  Lyrics? toLyrics({Duration songDuration = Duration.zero}) {
     if (instrumental) {
       return const Lyrics(origin: LyricsOrigin.lrclib, instrumental: true);
     }
-    return lyricsFromText(syncedLyrics, LyricsOrigin.lrclib) ??
-        lyricsFromText(plainLyrics, LyricsOrigin.lrclib);
+    if (hasReliableSync(this, songDuration)) {
+      final synced = lyricsFromText(syncedLyrics, LyricsOrigin.lrclib);
+      if (synced != null) return synced;
+    }
+    final text = hasPlainLyrics
+        ? plainLyrics
+        : parseLrc(syncedLyrics ?? '').plainText;
+    final plain = lyricsFromText(text, LyricsOrigin.lrclib);
+    if (plain == null || !plain.isSynced) return plain;
+    // El texto «plano» traía marcas de tiempo: se descartan.
+    return Lyrics(
+      origin: LyricsOrigin.lrclib,
+      plainText: parseLrc(text!).plainText,
+    );
   }
 }
+
+/// `true` si la letra sincronizada de [record] tiene tiempos creíbles para
+/// una canción de duración [songDuration] (si es cero se usa la del propio
+/// registro).
+///
+/// LRCLIB acepta subidas de cualquiera y hay registros con tiempos
+/// inventados. Se rechazan dos señales claras:
+///
+/// - **Se sale de la canción**: la última línea empieza después del final.
+/// - **Tiempos repartidos a máquina**: buena parte de las líneas están
+///   separadas por exactamente el mismo intervalo, cosa que no ocurre al
+///   sincronizar a mano o con el audio (ni en canciones de ritmo constante,
+///   donde los intervalos varían unas centésimas).
+bool hasReliableSync(LrclibRecord record, Duration songDuration) {
+  if (!record.hasSyncedLyrics) return false;
+  final lines = parseLrc(record.syncedLyrics!).lines;
+  if (lines.isEmpty) return false;
+
+  final duration = songDuration > Duration.zero
+      ? songDuration
+      : record.duration;
+  if (duration > Duration.zero &&
+      lines.last.time > duration + const Duration(seconds: 1)) {
+    return false;
+  }
+
+  final intervals = <int>[];
+  for (var i = 1; i < lines.length; i++) {
+    final gap = (lines[i].time - lines[i - 1].time).inMilliseconds;
+    if (gap > 0) intervals.add(gap);
+  }
+  if (intervals.length >= _minIntervalsToJudge) {
+    final counts = <int, int>{};
+    for (final gap in intervals) {
+      // Centésimas: es la resolución habitual del formato LRC.
+      counts.update(gap ~/ 10, (count) => count + 1, ifAbsent: () => 1);
+    }
+    final mostCommon = counts.values.reduce((a, b) => a > b ? a : b);
+    if (mostCommon / intervals.length >= _maxIdenticalIntervalShare) {
+      return false;
+    }
+  }
+  return true;
+}
+
+const int _minIntervalsToJudge = 8;
+const double _maxIdenticalIntervalShare = 0.4;
 
 /// Diferencia de duración por debajo de la cual un registro se considera la
 /// misma grabación sin necesidad de comparar con más candidatos.
@@ -70,8 +133,9 @@ const Duration exactMatchTolerance = Duration(seconds: 1);
 /// 1. Se descartan los registros de otro título u otro artista.
 /// 2. Se descartan los que difieren más de [tolerance] en duración: su letra
 ///    iría desincronizada.
-/// 3. De los restantes se prefieren los que tienen letra sincronizada,
-///    después los de solo texto y por último los instrumentales.
+/// 3. De los restantes se prefieren los que tienen letra sincronizada con
+///    tiempos fiables ([hasReliableSync]), después los de solo texto (o con
+///    tiempos no fiables) y por último los instrumentales.
 /// 4. Dentro de ese grupo gana el de duración más cercana y, a igualdad, el
 ///    que aparece antes en [records].
 ///
@@ -97,9 +161,14 @@ LrclibRecord? selectBestMatch(
   ];
   if (candidates.isEmpty) return null;
 
-  int quality(LrclibRecord record) => record.hasSyncedLyrics
+  // Una sincronización no fiable vale lo mismo que una letra de solo texto.
+  final reliable = {
+    for (final record in candidates)
+      if (hasReliableSync(record, duration)) record,
+  };
+  int quality(LrclibRecord record) => reliable.contains(record)
       ? 0
-      : record.hasPlainLyrics
+      : (record.hasPlainLyrics || record.hasSyncedLyrics)
       ? 1
       : 2;
 
