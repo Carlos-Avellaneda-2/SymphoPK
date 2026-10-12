@@ -4,6 +4,24 @@ Todas las versiones publicadas de SymphoPK. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones,
 [SemVer](https://semver.org/lang/es/).
 
+## [1.3.3] - 2026-10-12
+
+### Cambiado
+
+- **El ecualizador y el refuerzo de volumen solo están encendidos mientras
+  SymphoPK reproduce.** Antes seguían activos con la música en pausa,
+  mientras la app continuaba viva en segundo plano. Ahora se apagan al
+  pausar o detener y se vuelven a aplicar al reanudar, con la misma
+  configuración.
+
+### Notas
+
+- Los efectos de SymphoPK actúan solo sobre su propia música, no sobre el
+  sonido de otras aplicaciones. Si notas refuerzo o distorsión en todo el
+  teléfono, revisa si tienes instalada otra app de ecualizador o
+  amplificador de volumen: esas sí se aplican de forma global y se suman
+  al ecualizador de SymphoPK.
+
 ## [1.3.2] - 2026-10-11
 
 ### Cambiado
@@ -101,6 +119,7 @@ Todas las versiones publicadas de SymphoPK. El formato sigue
 - Recuerda la última canción y la posición al reabrir.
 - Tema claro y oscuro según el sistema.
 
+[1.3.3]: https://github.com/Carlos-Avellaneda-2/SymphoPK/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/Carlos-Avellaneda-2/SymphoPK/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/Carlos-Avellaneda-2/SymphoPK/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/Carlos-Avellaneda-2/SymphoPK/compare/v1.2.0...v1.3.0

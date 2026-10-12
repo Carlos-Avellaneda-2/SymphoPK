@@ -80,6 +80,11 @@ dispositivo informe de sus bandas.
 Mover cualquier deslizador cambia el preajuste a **Personalizado**. El
 refuerzo de volumen está limitado a 10 dB para evitar distorsión.
 
+El ecualizador y el refuerzo actúan solo sobre la música de SymphoPK y solo
+están encendidos mientras reproduce: al pausar se apagan y al reanudar se
+aplican de nuevo. Si tienes otra app de ecualizador o amplificador de
+volumen, su efecto es global y se suma al de SymphoPK.
+
 ### Letras
 
 En el reproductor, el botón de letra (junto al corazón) alterna entre la
@@ -113,13 +118,14 @@ caché.
 
 ## Estado
 
-Versión actual: **1.3.2**. Todas las funciones se han probado a mano en un
+Versión actual: **1.3.3**. Todas las funciones se han probado a mano en un
 teléfono Android real, además de los tests automáticos; la lista de lo
 comprobado está en [Probado en un dispositivo real](#probado-en-un-dispositivo-real).
 El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
 
 | Versión | Cambios |
 | --- | --- |
+| [1.3.3](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.3.3) | El ecualizador y el refuerzo de volumen solo actúan mientras la app reproduce |
 | [1.3.2](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.3.2) | Las letras de LRCLIB tienen prioridad sobre la incrustada en el archivo |
 | [1.3.1](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.3.1) | Las letras de LRCLIB se eligen por título, artista y duración, y se descartan las de tiempos inventados |
 | [1.3.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.3.0) | Ecualizador, letras sincronizadas y pantalla de ajustes con selección de tema |
