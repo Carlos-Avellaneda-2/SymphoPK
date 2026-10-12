@@ -47,6 +47,12 @@ Future<void> main() async {
   );
   await audioHandler.configureAudioSession();
   await equalizer.init();
+  // Los efectos solo se encienden mientras la app reproduce; en pausa no
+  // hay nada que procesar.
+  audioHandler.playbackState
+      .map((state) => state.playing)
+      .distinct()
+      .listen(equalizer.setPlaybackActive);
 
   // Mantiene al día los widgets de la pantalla de inicio y atiende sus
   // botones, también con la app en segundo plano.

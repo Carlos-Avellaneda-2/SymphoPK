@@ -30,6 +30,11 @@ class EqualizerState {
 
 /// Aplica la configuración del usuario a los efectos de audio, en tiempo
 /// real, y la guarda para restaurarla en el siguiente arranque.
+///
+/// Los efectos solo están encendidos mientras la app reproduce (ver
+/// [setPlaybackActive]). El servicio de audio sigue vivo en segundo plano con
+/// la música en pausa, y no tiene sentido mantener efectos activos sin nada
+/// que procesar.
 class EqualizerController {
   EqualizerController(this._engine, this._store);
 
@@ -44,6 +49,22 @@ class EqualizerController {
   ValueStream<EqualizerState> get state => _state.stream;
 
   EqualizerSettings get _settings => _state.value.settings;
+
+  /// La app está reproduciendo en este momento.
+  bool _playbackActive = false;
+
+  /// Los efectos deben estar encendidos: el usuario los activó y hay música
+  /// de la app sonando.
+  bool get _effectsOn => _settings.enabled && _playbackActive;
+
+  /// Informa de si la app está reproduciendo. Al pausar o parar se apagan
+  /// los efectos y al reanudar se vuelven a aplicar con la configuración
+  /// guardada.
+  Future<void> setPlaybackActive(bool active) async {
+    if (active == _playbackActive) return;
+    _playbackActive = active;
+    await _applyAll();
+  }
 
   /// Carga la configuración guardada y la aplica en cuanto el dispositivo
   /// informe de sus bandas. No bloquea el arranque de la app.
@@ -103,7 +124,7 @@ class EqualizerController {
         customCurve: _curve(capabilities, gains),
       ),
     );
-    if (_settings.enabled) await _engine.setBandGain(band, gains[band]);
+    if (_effectsOn) await _engine.setBandGain(band, gains[band]);
   }
 
   /// Guarda tras soltar un deslizador, para no escribir en cada movimiento.
@@ -112,7 +133,7 @@ class EqualizerController {
   Future<void> setLoudness(double gainDb) async {
     final value = gainDb.clamp(0, EqualizerSettings.maxLoudnessDb).toDouble();
     _emit(_settings.copyWith(loudnessDb: value));
-    if (_settings.enabled) await _engine.setLoudness(value);
+    if (_effectsOn) await _engine.setLoudness(value);
   }
 
   /// Vuelve a plano y sin refuerzo, conservando si está activado.
@@ -148,15 +169,17 @@ class EqualizerController {
     final current = _state.value;
     if (!current.isAvailable) return;
     try {
-      if (current.settings.enabled) {
+      if (_effectsOn) {
         for (var band = 0; band < current.gains.length; band++) {
           await _engine.setBandGain(band, current.gains[band]);
         }
+        await _engine.setEnabled(true);
+        await _engine.setLoudness(current.settings.loudnessDb);
+      } else {
+        // `setLoudness(0)` deja el refuerzo a cero y lo desactiva.
+        await _engine.setLoudness(0);
+        await _engine.setEnabled(false);
       }
-      await _engine.setEnabled(current.settings.enabled);
-      await _engine.setLoudness(
-        current.settings.enabled ? current.settings.loudnessDb : 0,
-      );
     } on Object {
       // Un fallo del efecto de audio no debe interrumpir la reproducción.
     }

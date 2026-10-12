@@ -201,10 +201,11 @@ void main() {
     late MemoryKeyValueStore store;
     late EqualizerController controller;
 
-    Future<void> start({bool ready = true}) async {
+    Future<void> start({bool ready = true, bool playing = true}) async {
       engine = _FakeEngine(ready: ready);
       controller = EqualizerController(engine, store);
       await controller.init();
+      await controller.setPlaybackActive(playing);
       await pumpEventQueue();
     }
 
@@ -311,6 +312,101 @@ void main() {
       await controller.selectPreset(EqualizerPreset.jazz);
       await controller.selectPreset(EqualizerPreset.custom);
       expect(controller.state.value.gains, [3, 1, -1, 2, 3]);
+    });
+
+    group('solo actúa mientras la app reproduce', () {
+      test('con la música parada no enciende ningún efecto', () async {
+        await start(playing: false);
+        await controller.setEnabled(true);
+        await controller.selectPreset(EqualizerPreset.rock);
+        await controller.setLoudness(8);
+
+        expect(controller.state.value.settings.enabled, isTrue);
+        expect(engine.enabled, isFalse);
+        expect(engine.loudness, 0);
+        expect(engine.bandGains, isEmpty);
+      });
+
+      test(
+        'al empezar a reproducir aplica la configuración guardada',
+        () async {
+          await start(playing: false);
+          await controller.setEnabled(true);
+          await controller.selectPreset(EqualizerPreset.rock);
+          await controller.setLoudness(8);
+
+          await controller.setPlaybackActive(true);
+          expect(engine.enabled, isTrue);
+          expect(engine.loudness, 8);
+          expect(engine.bandGains, {0: 5, 1: 3, 2: -1, 3: 3, 4: 5});
+        },
+      );
+
+      test('al pausar apaga el ecualizador y el refuerzo', () async {
+        await start();
+        await controller.setEnabled(true);
+        await controller.setLoudness(8);
+        expect(engine.loudness, 8);
+
+        await controller.setPlaybackActive(false);
+        expect(engine.enabled, isFalse);
+        expect(engine.loudness, 0, reason: 'el refuerzo no debe quedar activo');
+        // La configuración del usuario no cambia.
+        expect(controller.state.value.settings.enabled, isTrue);
+        expect(controller.state.value.settings.loudnessDb, 8);
+      });
+
+      test('al reanudar vuelve a encenderlos igual que estaban', () async {
+        await start();
+        await controller.setEnabled(true);
+        await controller.selectPreset(EqualizerPreset.bassBoost);
+        await controller.setLoudness(6);
+
+        await controller.setPlaybackActive(false);
+        await controller.setPlaybackActive(true);
+        expect(engine.enabled, isTrue);
+        expect(engine.loudness, 6);
+        expect(engine.bandGains[0], 7);
+      });
+
+      test('los cambios hechos en pausa se aplican al reanudar', () async {
+        await start();
+        await controller.setEnabled(true);
+        await controller.setPlaybackActive(false);
+
+        await controller.setBandGain(2, 9);
+        await controller.setLoudness(4);
+        expect(engine.loudness, 0, reason: 'en pausa no se toca el efecto');
+
+        await controller.setPlaybackActive(true);
+        expect(engine.bandGains[2], 9);
+        expect(engine.loudness, 4);
+      });
+
+      test(
+        'reproducir con el ecualizador desactivado no enciende nada',
+        () async {
+          await start(playing: false);
+          await controller.setLoudness(8);
+          await controller.setPlaybackActive(true);
+          expect(engine.enabled, isFalse);
+          expect(engine.loudness, 0);
+        },
+      );
+
+      test('pausar no borra lo guardado', () async {
+        await start();
+        await controller.setEnabled(true);
+        await controller.setLoudness(7);
+        await controller.commit();
+        await controller.setPlaybackActive(false);
+
+        final saved = EqualizerSettings.fromJson(
+          store.values[EqualizerController.storageKey],
+        );
+        expect(saved.enabled, isTrue);
+        expect(saved.loudnessDb, 7);
+      });
     });
   });
 }
