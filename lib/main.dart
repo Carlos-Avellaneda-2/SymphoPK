@@ -46,6 +46,7 @@ Future<void> main() async {
     ),
   );
   await audioHandler.configureAudioSession();
+  await audioHandler.setNormalization(preferences.normalization);
   await equalizer.init();
   // Los efectos solo se encienden mientras la app reproduce; en pausa no
   // hay nada que procesar.

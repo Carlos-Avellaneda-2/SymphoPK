@@ -6,6 +6,7 @@ import 'package:symphopk/core/database/app_database.dart';
 import 'package:symphopk/core/database/database_provider.dart';
 import 'package:symphopk/core/database/key_value_store.dart';
 import 'package:symphopk/core/utils/formatters.dart';
+import 'package:symphopk/features/player/domain/replay_gain.dart';
 import 'package:symphopk/features/settings/data/app_preferences.dart';
 
 import '../support/memory_key_value_store.dart';
@@ -16,6 +17,26 @@ void main() {
       final preferences = await AppPreferences.load(MemoryKeyValueStore());
       expect(preferences.themeMode, ThemeMode.system);
       expect(preferences.saveLyricsToDisk, isTrue);
+      expect(preferences.normalization, NormalizationMode.off);
+      expect(preferences.crossfadeSeconds, 0);
+    });
+
+    test('recupera normalización y crossfade', () async {
+      final store = MemoryKeyValueStore()
+        ..values[AppPreferences.normalizationKey] = 'album'
+        ..values[AppPreferences.crossfadeKey] = '5';
+      final preferences = await AppPreferences.load(store);
+      expect(preferences.normalization, NormalizationMode.album);
+      expect(preferences.crossfadeSeconds, 5);
+    });
+
+    test('normalización desconocida y crossfade fuera de rango', () async {
+      final store = MemoryKeyValueStore()
+        ..values[AppPreferences.normalizationKey] = 'mucha'
+        ..values[AppPreferences.crossfadeKey] = '99';
+      final preferences = await AppPreferences.load(store);
+      expect(preferences.normalization, NormalizationMode.off);
+      expect(preferences.crossfadeSeconds, AppPreferences.maxCrossfadeSeconds);
     });
 
     test('recupera lo guardado', () async {
@@ -76,6 +97,18 @@ void main() {
       expect(state.saveLyricsToDisk, isFalse);
       expect(state.themeMode, ThemeMode.light);
       expect((await AppPreferences.load(store)).saveLyricsToDisk, isFalse);
+    });
+
+    test('normalización y crossfade se persisten', () async {
+      final controller = container.read(preferencesProvider.notifier);
+      await controller.setNormalization(NormalizationMode.track);
+      await controller.setCrossfadeSeconds(30);
+      final state = container.read(preferencesProvider);
+      expect(state.normalization, NormalizationMode.track);
+      expect(state.crossfadeSeconds, AppPreferences.maxCrossfadeSeconds);
+      final reloaded = await AppPreferences.load(store);
+      expect(reloaded.normalization, NormalizationMode.track);
+      expect(reloaded.crossfadeSeconds, AppPreferences.maxCrossfadeSeconds);
     });
   });
 

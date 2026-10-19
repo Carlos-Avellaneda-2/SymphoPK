@@ -8,6 +8,8 @@ import 'package:rxdart/rxdart.dart';
 import '../../library/domain/song.dart';
 import '../domain/queue_manager.dart';
 import '../domain/queue_state.dart';
+import '../domain/replay_gain.dart';
+import 'replay_gain_reader.dart';
 
 /// Servicio de audio de la app. Une `just_audio` (reproducción) con
 /// [QueueManager] (qué suena después) y publica el estado en el formato de
@@ -17,9 +19,13 @@ import '../domain/queue_state.dart';
 /// La UI nunca toca el reproductor: solo llama a los métodos de esta clase y
 /// escucha [queueState], [playbackState] y [positionStream].
 class SymphoAudioHandler extends BaseAudioHandler with SeekHandler {
-  SymphoAudioHandler({AudioPlayer? player, QueueManager? queueManager})
-    : _player = player ?? AudioPlayer(),
-      _queue = queueManager ?? QueueManager() {
+  SymphoAudioHandler({
+    AudioPlayer? player,
+    QueueManager? queueManager,
+    ReplayGainReader? replayGainReader,
+  }) : _player = player ?? AudioPlayer(),
+       _queue = queueManager ?? QueueManager(),
+       _readReplayGain = replayGainReader ?? readReplayGain {
     _subscriptions
       ..add(_player.playbackEventStream.listen((_) => _broadcastState()))
       ..add(_player.playingStream.listen((_) => _broadcastState()))
@@ -42,6 +48,16 @@ class SymphoAudioHandler extends BaseAudioHandler with SeekHandler {
 
   /// Errores de carga consecutivos, para no saltar en bucle sin fin.
   int _failures = 0;
+
+  final ReplayGainReader _readReplayGain;
+  NormalizationMode _normalization = NormalizationMode.off;
+
+  // Valores ReplayGain ya leídos, por id de canción (`null`: sin etiquetas).
+  final _replayGainCache = <int, ReplayGainInfo?>{};
+  static const int _replayGainCacheSize = 200;
+
+  /// Tiempo máximo esperando las etiquetas antes de empezar a sonar.
+  static const Duration _replayGainTimeout = Duration(milliseconds: 1500);
 
   ValueStream<QueueState> get queueState => _queueState.stream;
 
@@ -183,6 +199,18 @@ class SymphoAudioHandler extends BaseAudioHandler with SeekHandler {
     }
   }
 
+  NormalizationMode get normalization => _normalization;
+
+  /// Cambia la normalización de volumen y la aplica a la canción actual.
+  Future<void> setNormalization(NormalizationMode mode) async {
+    if (mode == _normalization) return;
+    _normalization = mode;
+    final song = _queue.current;
+    if (song == null) return;
+    final volume = await _normalizedVolume(song);
+    if (_queue.current == song) await _player.setVolume(volume);
+  }
+
   Future<void> setShuffle(bool enabled) async {
     _queue.setShuffle(enabled);
     _publishQueue();
@@ -244,6 +272,9 @@ class SymphoAudioHandler extends BaseAudioHandler with SeekHandler {
       await _player.stop();
       return;
     }
+    // Las etiquetas se leen a la vez que se prepara el archivo.
+    final volume = _normalizedVolume(song)
+        .timeout(_replayGainTimeout, onTimeout: () => 1);
     try {
       await _player.setAudioSource(
         AudioSource.uri(Uri.parse(song.uri)),
@@ -264,7 +295,34 @@ class SymphoAudioHandler extends BaseAudioHandler with SeekHandler {
       await _player.stop();
       return;
     }
-    if (autoPlay && _queue.current == song) unawaited(_player.play());
+    // El volumen se ajusta antes de sonar para no empezar a todo volumen.
+    final level = await volume;
+    if (_queue.current != song) return;
+    await _player.setVolume(level);
+    if (autoPlay) unawaited(_player.play());
+  }
+
+  /// Volumen de [song] según la normalización elegida (1 si está apagada).
+  Future<double> _normalizedVolume(Song song) async {
+    if (_normalization == NormalizationMode.off) return 1;
+    return normalizationVolume(await _replayGainOf(song), _normalization);
+  }
+
+  Future<ReplayGainInfo?> _replayGainOf(Song song) async {
+    if (_replayGainCache.containsKey(song.id)) {
+      return _replayGainCache[song.id];
+    }
+    ReplayGainInfo? info;
+    try {
+      info = await _readReplayGain(song.path);
+    } on Object {
+      info = null;
+    }
+    _replayGainCache[song.id] = info;
+    while (_replayGainCache.length > _replayGainCacheSize) {
+      _replayGainCache.remove(_replayGainCache.keys.first);
+    }
+    return info;
   }
 
   void _publishQueue() {
