@@ -26,8 +26,12 @@ sesión.
   volumen y configuración persistente.
 - **Letras sincronizadas**: desde un archivo `.lrc`, desde LRCLIB o desde
   los metadatos del archivo, con la línea actual resaltada.
-- **Ajustes**: tema (sistema, claro u oscuro), ecualizador y opciones de
-  letras.
+- **Ajustes**: tema (sistema, claro u oscuro), ecualizador, normalización
+  de volumen, fundido entre canciones y opciones de letras.
+- **Calidad del audio**: insignia con el formato y la calidad de cada
+  canción (`FLAC · 24 bit/96 kHz`, `MP3 · 320 kbps`).
+- **Normalizar volumen** con ReplayGain, por canción o por álbum.
+- **Fundido entre canciones** (crossfade) configurable de 1 a 12 segundos.
 - **Reproductor**: play/pausa, siguiente, anterior, barra de progreso con
   seek, cola reordenable, modo aleatorio y repetir (ninguna / todas / una).
 - **Mini reproductor** persistente y **pantalla completa** con la carátula
@@ -118,13 +122,14 @@ caché.
 
 ## Estado
 
-Versión actual: **1.3.3**. Todas las funciones se han probado a mano en un
+Versión actual: **1.4.0**. Todas las funciones se han probado a mano en un
 teléfono Android real, además de los tests automáticos; la lista de lo
 comprobado está en [Probado en un dispositivo real](#probado-en-un-dispositivo-real).
 El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
 
 | Versión | Cambios |
 | --- | --- |
+| [1.4.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.4.0) | Insignia de calidad, normalización de volumen con ReplayGain y fundido entre canciones |
 | [1.3.3](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.3.3) | El ecualizador y el refuerzo de volumen solo actúan mientras la app reproduce |
 | [1.3.2](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.3.2) | Las letras de LRCLIB tienen prioridad sobre la incrustada en el archivo |
 | [1.3.1](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.3.1) | Las letras de LRCLIB se eligen por título, artista y duración, y se descartan las de tiempos inventados |

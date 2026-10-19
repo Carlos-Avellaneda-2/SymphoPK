@@ -4,7 +4,7 @@ abstract final class AppInfo {
 
   /// Debe coincidir con `version` en `pubspec.yaml` (hay un test que lo
   /// comprueba).
-  static const String version = '1.3.3';
+  static const String version = '1.4.0';
 
   static const String repositoryUrl =
       'https://github.com/Carlos-Avellaneda-2/SymphoPK';

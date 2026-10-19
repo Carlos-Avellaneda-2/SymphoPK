@@ -25,6 +25,7 @@ import 'package:symphopk/features/equalizer/presentation/equalizer_screen.dart';
 import 'package:symphopk/features/favorites/presentation/favorites_providers.dart';
 import 'package:symphopk/features/home/home_shell.dart';
 import 'package:symphopk/features/library/data/library_scanner.dart';
+import 'package:symphopk/features/library/domain/audio_quality.dart';
 import 'package:symphopk/features/library/domain/song.dart';
 import 'package:symphopk/features/library/presentation/library_providers.dart';
 import 'package:symphopk/core/database/database_provider.dart';
@@ -81,6 +82,13 @@ final _library = [
       albumId: i % 2,
       artistId: i % 3,
       track: i,
+      quality: i % 2 == 0
+          ? const AudioQuality(
+              mimeType: 'audio/flac',
+              bitsPerSample: 16,
+              sampleRate: 44100,
+            )
+          : const AudioQuality(mimeType: 'audio/mpeg', bitrate: 320000),
       folder:
           '/storage/emulated/0/Music/${const ['Rock', 'Rock/Directos', 'Para estudiar'][i % 3]}',
     ),
@@ -283,6 +291,8 @@ void main() {
       playing: queue,
     );
     expect(find.text(_library[1].title), findsOneWidget);
+    // La canción actual (id 2) es un FLAC.
+    expect(find.text('FLAC · 16 bit/44.1 kHz'), findsOneWidget);
     await shot(tester, shotKey, '05_reproductor');
   });
 

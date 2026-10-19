@@ -229,4 +229,18 @@ void main() {
     queue.setShuffle(false);
     expect(ids(), [1, 2, 3, 4]);
   });
+
+  test('peekNext anticipa la siguiente sin avanzar', () {
+    expect(queue.peekNext(), isNull);
+    queue.setQueue(songs(3), startIndex: 2);
+    expect(queue.peekNext(), isNull, reason: 'fin de la cola');
+    queue.setRepeat(QueueRepeat.all);
+    expect(queue.peekNext()?.id, 1);
+    queue.setRepeat(QueueRepeat.one);
+    expect(queue.peekNext()?.id, 3);
+    queue.jumpTo(0);
+    queue.setRepeat(QueueRepeat.off);
+    expect(queue.peekNext()?.id, 2);
+    expect(queue.current?.id, 1);
+  });
 }

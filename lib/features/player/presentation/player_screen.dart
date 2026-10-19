@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../equalizer/presentation/equalizer_screen.dart';
 import '../../favorites/presentation/favorite_button.dart';
 import '../../library/presentation/widgets/artwork_image.dart';
+import '../../library/presentation/widgets/quality_badge.dart';
 import '../../lyrics/presentation/lyrics_panel.dart';
 import 'player_providers.dart';
 import 'widgets/mini_player.dart';
@@ -185,6 +186,11 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                   color: scheme.onSurfaceVariant,
                                 ),
                               ),
+                              if (song != null &&
+                                  song.quality.label != null) ...[
+                                const SizedBox(height: 8),
+                                QualityBadge(quality: song.quality),
+                              ],
                             ],
                           ),
                         ),

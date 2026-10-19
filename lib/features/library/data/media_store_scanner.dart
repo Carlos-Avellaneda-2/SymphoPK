@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 
+import '../domain/audio_quality.dart';
 import '../domain/song.dart';
 import 'library_scanner.dart';
 
@@ -59,21 +60,40 @@ class MediaStoreScanner implements LibraryScanner {
         ? displayName!.substring(0, dot)
         : displayName;
 
+    final duration = Duration(
+      milliseconds: (row['durationMs'] as num?)?.toInt() ?? 0,
+    );
+    final extensionDot = displayName?.lastIndexOf('.') ?? -1;
+    final quality = AudioQuality(
+      mimeType: row['mimeType'] as String?,
+      extension: extensionDot > 0
+          ? displayName!.substring(extensionDot + 1).toLowerCase()
+          : null,
+      // Android 10 o anterior no informa el bitrate: se estima.
+      bitrate:
+          (row['bitrate'] as num?)?.toInt() ??
+          AudioQuality.estimateBitrate(
+            (row['sizeBytes'] as num?)?.toInt(),
+            duration,
+          ),
+      sampleRate: (row['sampleRate'] as num?)?.toInt(),
+      bitsPerSample: (row['bitsPerSample'] as num?)?.toInt(),
+    );
+
     return Song(
       id: id,
       uri: uri,
       title: text('title') ?? nameWithoutExtension ?? 'Sin título',
       artist: text('artist') ?? Song.unknownArtist,
       album: text('album') ?? Song.unknownAlbum,
-      duration: Duration(
-        milliseconds: (row['durationMs'] as num?)?.toInt() ?? 0,
-      ),
+      duration: duration,
       albumId: (row['albumId'] as num?)?.toInt(),
       artistId: (row['artistId'] as num?)?.toInt(),
       track: (row['track'] as num?)?.toInt(),
       dateAdded: (row['dateAdded'] as num?)?.toInt(),
       folder: _folderOf(row['path'] as String?),
       path: row['path'] as String? ?? '',
+      quality: quality,
     );
   }
 

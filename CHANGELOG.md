@@ -4,6 +4,25 @@ Todas las versiones publicadas de SymphoPK. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones,
 [SemVer](https://semver.org/lang/es/).
 
+## [1.4.0] - 2026-10-19
+
+### Añadido
+
+- **Insignia de calidad.** La pantalla del reproductor y el menú de cada
+  canción muestran el formato y la calidad del archivo: bits y frecuencia
+  en los formatos sin pérdida (`FLAC · 16 bit/44.1 kHz`) y kbps en los
+  comprimidos (`MP3 · 320 kbps`). El color indica el nivel: alta
+  resolución, sin pérdida, alta, estándar o baja.
+- **Normalizar volumen** (Ajustes › Sonido): iguala el volumen entre
+  canciones con las etiquetas ReplayGain del archivo, por canción o por
+  álbum. Solo baja las canciones más fuertes, nunca sube el volumen, y
+  respeta el pico de cada pista para no saturar. Admite MP3, FLAC, Ogg y
+  etiquetas APE; los archivos sin etiquetas suenan como siempre.
+- **Fundido entre canciones** (crossfade, Ajustes › Sonido): de 1 a 12
+  segundos en los que la canción que termina se apaga mientras empieza la
+  siguiente. Solo se aplica cuando la canción acaba sola; los saltos
+  manuales, «repetir una» y las canciones muy cortas no se funden.
+
 ## [1.3.3] - 2026-10-12
 
 ### Cambiado

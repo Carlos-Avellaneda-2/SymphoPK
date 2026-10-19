@@ -9,6 +9,7 @@ import '../../library/domain/library_grouping.dart';
 import '../../library/presentation/widgets/screen_title.dart';
 import '../../lyrics/data/lyrics_folder_access.dart';
 import '../../lyrics/presentation/lyrics_providers.dart';
+import '../../player/domain/replay_gain.dart';
 import '../data/app_preferences.dart';
 
 /// Espacio que ocupa la caché temporal de letras.
@@ -37,6 +38,8 @@ class SettingsScreen extends ConsumerWidget {
             _ThemeSetting(),
             _SectionHeader('Sonido'),
             _EqualizerTile(),
+            _NormalizationSetting(),
+            _CrossfadeSetting(),
             _SectionHeader('Letras'),
             _LyricsCacheSettings(),
             _LyricsFolderSettings(),
@@ -138,6 +141,107 @@ class _EqualizerTile extends ConsumerWidget {
       ),
       trailing: const Icon(Icons.chevron_right_rounded),
       onTap: () => openEqualizerScreen(context),
+    );
+  }
+}
+
+class _NormalizationSetting extends ConsumerWidget {
+  const _NormalizationSetting();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final mode = ref.watch(preferencesProvider.select((p) => p.normalization));
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Normalizar volumen', style: theme.textTheme.bodyLarge),
+          const SizedBox(height: 2),
+          Text(
+            'Baja las canciones más fuertes para que todas suenen parejo. '
+            'Usa las etiquetas ReplayGain del archivo; nunca sube el volumen.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<NormalizationMode>(
+              showSelectedIcon: false,
+              segments: [
+                for (final option in NormalizationMode.values)
+                  ButtonSegment(value: option, label: Text(option.label)),
+              ],
+              selected: {mode},
+              onSelectionChanged: (selection) => ref
+                  .read(preferencesProvider.notifier)
+                  .setNormalization(selection.first),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CrossfadeSetting extends ConsumerWidget {
+  const _CrossfadeSetting();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final seconds = ref.watch(
+      preferencesProvider.select((p) => p.crossfadeSeconds),
+    );
+    final value = seconds == 0 ? 'Desactivado' : '$seconds s';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 8, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Fundido entre canciones',
+                  style: theme.textTheme.bodyLarge,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Text(
+                  value,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Text(
+              'La canción que termina se apaga mientras empieza la siguiente.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Slider(
+            value: seconds.toDouble(),
+            max: AppPreferences.maxCrossfadeSeconds.toDouble(),
+            divisions: AppPreferences.maxCrossfadeSeconds,
+            label: value,
+            onChanged: (v) => ref
+                .read(preferencesProvider.notifier)
+                .setCrossfadeSeconds(v.round()),
+          ),
+        ],
+      ),
     );
   }
 }

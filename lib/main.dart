@@ -34,7 +34,8 @@ Future<void> main() async {
   // la pantalla de bloqueo.
   final audioHandler = await AudioService.init(
     builder: () => SymphoAudioHandler(
-      player: AudioPlayer(audioPipeline: equalizerEngine.pipeline),
+      player: AudioPlayer(audioPipeline: equalizerEngine.pipelines[0]),
+      crossfadePlayer: AudioPlayer(audioPipeline: equalizerEngine.pipelines[1]),
     ),
     config: const AudioServiceConfig(
       androidNotificationChannelId: 'com.carlosavellaneda.symphopk.playback',
@@ -46,6 +47,8 @@ Future<void> main() async {
     ),
   );
   await audioHandler.configureAudioSession();
+  await audioHandler.setNormalization(preferences.normalization);
+  audioHandler.setCrossfade(preferences.crossfadeSeconds);
   await equalizer.init();
   // Los efectos solo se encienden mientras la app reproduce; en pausa no
   // hay nada que procesar.

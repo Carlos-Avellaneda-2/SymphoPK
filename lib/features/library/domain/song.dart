@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'audio_quality.dart';
+
 /// Canción de la biblioteca local. `id` es el identificador de MediaStore.
 @immutable
 class Song {
@@ -16,6 +18,7 @@ class Song {
     this.dateAdded,
     this.folder = '',
     this.path = '',
+    this.quality = const AudioQuality.unknown(),
   });
 
   final int id;
@@ -40,6 +43,9 @@ class Song {
   /// Ruta absoluta del archivo; vacía si se desconoce. Solo se usa para
   /// localizar letras, nunca para reproducir.
   final String path;
+
+  /// Formato y calidad técnica del archivo.
+  final AudioQuality quality;
 
   /// Textos que sustituyen a las etiquetas que el archivo no trae.
   static const String unknownArtist = 'Artista desconocido';

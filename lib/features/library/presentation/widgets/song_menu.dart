@@ -6,6 +6,7 @@ import '../../../player/presentation/player_providers.dart';
 import '../../../playlists/presentation/widgets/playlist_dialogs.dart';
 import '../../domain/song.dart';
 import 'artwork_image.dart';
+import 'quality_badge.dart';
 
 /// Botón «más» de una canción: cola, listas y favoritos.
 class SongMenuButton extends ConsumerWidget {
@@ -51,10 +52,19 @@ class SongMenuButton extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
-                subtitle: Text(
-                  song.artist,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      song.artist,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (song.quality.label != null) ...[
+                      const SizedBox(height: 4),
+                      QualityBadge(quality: song.quality, compact: true),
+                    ],
+                  ],
                 ),
               ),
               const Divider(height: 8),
