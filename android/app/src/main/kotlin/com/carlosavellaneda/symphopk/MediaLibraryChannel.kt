@@ -113,7 +113,10 @@ class MediaLibraryChannel(
             // Ruta del archivo: solo se usa para agrupar por carpetas, nunca
             // para abrirlo (la reproducción va por el URI de contenido).
             MediaStore.Audio.Media.DATA,
-        )
+            // Calidad del archivo, para la insignia del reproductor.
+            MediaStore.Audio.Media.MIME_TYPE,
+            MediaStore.Audio.Media.SIZE,
+        ) + qualityColumns()
         val songs = ArrayList<Map<String, Any?>>()
         context.contentResolver.query(
             collection,
@@ -134,6 +137,12 @@ class MediaLibraryChannel(
             val dateAdded = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
             val duration = cursor.getColumnIndexOrThrow(COLUMN_DURATION)
             val path = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
+            val mime = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
+            val size = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE)
+            // Columnas que solo existen en versiones recientes: -1 si no están.
+            val bitrate = cursor.getColumnIndex(COLUMN_BITRATE)
+            val sampleRate = cursor.getColumnIndex(COLUMN_SAMPLE_RATE)
+            val bitsPerSample = cursor.getColumnIndex(COLUMN_BITS_PER_SAMPLE)
 
             while (cursor.moveToNext()) {
                 val songId = cursor.getLong(id)
@@ -151,6 +160,11 @@ class MediaLibraryChannel(
                         "dateAdded" to cursor.longOrNull(dateAdded),
                         "durationMs" to (cursor.longOrNull(duration) ?: 0L),
                         "path" to cursor.getString(path),
+                        "mimeType" to cursor.getString(mime),
+                        "sizeBytes" to cursor.longOrNull(size),
+                        "bitrate" to cursor.positiveOrNull(bitrate),
+                        "sampleRate" to cursor.positiveOrNull(sampleRate),
+                        "bitsPerSample" to cursor.positiveOrNull(bitsPerSample),
                     ),
                 )
             }
@@ -168,6 +182,21 @@ class MediaLibraryChannel(
         }
     }
 
+    /** Bitrate desde Android 11; frecuencia y bits por muestra desde Android 14. */
+    private fun qualityColumns(): Array<String> = buildList {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) add(COLUMN_BITRATE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            add(COLUMN_SAMPLE_RATE)
+            add(COLUMN_BITS_PER_SAMPLE)
+        }
+    }.toTypedArray()
+
+    /** Valor positivo de la columna, o `null` si no existe, está vacía o es 0. */
+    private fun android.database.Cursor.positiveOrNull(index: Int): Long? {
+        if (index < 0 || isNull(index)) return null
+        return getLong(index).takeIf { it > 0 }
+    }
+
     private fun android.database.Cursor.longOrNull(index: Int): Long? =
         if (isNull(index)) null else getLong(index)
 
@@ -177,5 +206,10 @@ class MediaLibraryChannel(
         // `MediaStore.Audio.Media.DURATION` solo existe como constante desde
         // API 29, pero la columna está disponible en todas las versiones.
         const val COLUMN_DURATION = "duration"
+
+        // Nombres literales para no depender de constantes de API recientes.
+        const val COLUMN_BITRATE = "bitrate"
+        const val COLUMN_SAMPLE_RATE = "samplerate"
+        const val COLUMN_BITS_PER_SAMPLE = "bits_per_sample"
     }
 }
