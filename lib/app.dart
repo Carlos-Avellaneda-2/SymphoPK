@@ -18,6 +18,10 @@ class SymphoApp extends ConsumerWidget {
       preferencesProvider.select((p) => p.normalization),
       (_, mode) => ref.read(audioHandlerProvider).setNormalization(mode),
     );
+    ref.listen(
+      preferencesProvider.select((p) => p.crossfadeSeconds),
+      (_, seconds) => ref.read(audioHandlerProvider).setCrossfade(seconds),
+    );
 
     return MaterialApp(
       title: 'SymphoPK',

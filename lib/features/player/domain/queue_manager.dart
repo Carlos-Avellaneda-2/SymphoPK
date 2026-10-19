@@ -104,6 +104,14 @@ class QueueManager {
     return current;
   }
 
+  /// Canción que sonaría al terminar sola la actual, sin avanzar la cola.
+  Song? peekNext() {
+    final index = _index;
+    final song = next(auto: true);
+    _index = index;
+    return song;
+  }
+
   /// Retrocede una canción. En la primera vuelve a la última solo con
   /// «repetir todas»; si no, se queda en la primera.
   Song? previous() {
