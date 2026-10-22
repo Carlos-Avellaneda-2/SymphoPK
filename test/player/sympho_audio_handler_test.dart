@@ -171,6 +171,22 @@ void main() {
       async.flushMicrotasks();
     }
 
+    test('el estado publicado nunca pasa por «en pausa»', () {
+      // Si lo hiciera, el servicio saldría de primer plano y Android no
+      // deja volver a él con la app en segundo plano.
+      run((async) {
+        startPlaying(async);
+        final playing = <bool>[];
+        handler.playbackState.listen((state) => playing.add(state.playing));
+        a.emitPosition(nearEnd);
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 4));
+        expect(currentId(), 2);
+        expect(playing, isNotEmpty);
+        expect(playing, everyElement(isTrue));
+      });
+    });
+
     test('prepara la siguiente y la funde con la actual', () {
       run((async) {
         startPlaying(async);

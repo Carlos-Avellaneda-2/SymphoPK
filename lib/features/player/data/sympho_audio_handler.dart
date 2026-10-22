@@ -432,9 +432,13 @@ class SymphoAudioHandler extends BaseAudioHandler with SeekHandler {
       _queue.next(auto: true);
       _level = level;
       _fadingOut = outgoing;
+      // Primero a sonar y luego el relevo: si el estado publicado pasara
+      // por «en pausa», el servicio saldría de primer plano y Android no
+      // deja volver a él desde segundo plano; el sistema congelaría la app
+      // y la música se cortaría.
+      unawaited(incoming.play());
       _activePlayer.add(incoming);
       _publishQueue();
-      unawaited(incoming.play());
       _runFade(outgoing, incoming, outgoing.volume, remaining);
     } finally {
       _preparingCrossfade = false;
