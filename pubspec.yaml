@@ -2,7 +2,7 @@ name: symphopk
 description: "Reproductor de música local para Android."
 publish_to: 'none'
 
-version: 1.4.0+8
+version: 1.4.1+9
 
 environment:
   sdk: ^3.13.5

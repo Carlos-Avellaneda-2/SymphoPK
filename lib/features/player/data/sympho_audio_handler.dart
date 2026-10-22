@@ -119,6 +119,21 @@ class SymphoAudioHandler extends BaseAudioHandler with SeekHandler {
   Future<void> configureAudioSession() async {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
+    // Al terminar una bajada temporal de volumen (p. ej. una notificación),
+    // `just_audio` duplica el volumen del reproductor, lo que desharía la
+    // normalización; se restaura el nivel de la canción.
+    _subscriptions.add(
+      session.interruptionEventStream
+          .where((e) => !e.begin && e.type == AudioInterruptionType.duck)
+          // En una microtarea, para actuar después de `just_audio` sea cual
+          // sea el orden de las suscripciones.
+          .listen((_) => scheduleMicrotask(_restoreLevel)),
+    );
+  }
+
+  void _restoreLevel() {
+    if (_fadingOut != null) return; // el fundido ya ajusta los volúmenes
+    unawaited(_player.setVolume(_level));
   }
 
   // ---------------------------------------------------------------------
@@ -432,9 +447,13 @@ class SymphoAudioHandler extends BaseAudioHandler with SeekHandler {
       _queue.next(auto: true);
       _level = level;
       _fadingOut = outgoing;
+      // Primero a sonar y luego el relevo: si el estado publicado pasara
+      // por «en pausa», el servicio saldría de primer plano y Android no
+      // deja volver a él desde segundo plano; el sistema congelaría la app
+      // y la música se cortaría.
+      unawaited(incoming.play());
       _activePlayer.add(incoming);
       _publishQueue();
-      unawaited(incoming.play());
       _runFade(outgoing, incoming, outgoing.volume, remaining);
     } finally {
       _preparingCrossfade = false;

@@ -42,8 +42,13 @@ Future<void> main() async {
       androidNotificationChannelName: 'Reproducción',
       androidNotificationChannelDescription: 'Controles de la música en curso',
       androidNotificationIcon: 'drawable/ic_notification',
-      androidNotificationOngoing: true,
-      androidStopForegroundOnPause: true,
+      // El servicio sigue en primer plano también en pausa. Android 12+ no
+      // deja volver a primer plano desde segundo plano, así que si saliera
+      // al pausar, reanudar tras una interrupción (otra app que pide el
+      // audio un momento, una llamada) fallaría y el sistema congelaría la
+      // app con la música a medias.
+      androidNotificationOngoing: false,
+      androidStopForegroundOnPause: false,
     ),
   );
   await audioHandler.configureAudioSession();

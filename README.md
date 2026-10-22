@@ -122,13 +122,14 @@ caché.
 
 ## Estado
 
-Versión actual: **1.4.0**. Todas las funciones se han probado a mano en un
+Versión actual: **1.4.1**. Todas las funciones se han probado a mano en un
 teléfono Android real, además de los tests automáticos; la lista de lo
 comprobado está en [Probado en un dispositivo real](#probado-en-un-dispositivo-real).
 El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
 
 | Versión | Cambios |
 | --- | --- |
+| [1.4.1](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.4.1) | La música ya no se corta en segundo plano tras un fundido o una interrupción breve |
 | [1.4.0](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.4.0) | Insignia de calidad, normalización de volumen con ReplayGain y fundido entre canciones |
 | [1.3.3](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.3.3) | El ecualizador y el refuerzo de volumen solo actúan mientras la app reproduce |
 | [1.3.2](https://github.com/Carlos-Avellaneda-2/SymphoPK/releases/tag/v1.3.2) | Las letras de LRCLIB tienen prioridad sobre la incrustada en el archivo |

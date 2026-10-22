@@ -4,6 +4,26 @@ Todas las versiones publicadas de SymphoPK. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones,
 [SemVer](https://semver.org/lang/es/).
 
+## [1.4.1] - 2026-10-21
+
+### Corregido
+
+- **La música ya no se corta en segundo plano.** A veces se detenía mientras
+  usabas otra app y no seguía hasta volver a abrir SymphoPK. Pasaba en dos
+  casos: al cambiar de canción con el fundido activado y al reanudar tras
+  una interrupción breve, como cuando otra app reproduce un video o una nota
+  de voz. Android no deja que una app en segundo plano vuelva a primer
+  plano, y sin primer plano el sistema la congelaba.
+- **La normalización se mantiene tras una notificación.** Al terminar una
+  bajada momentánea de volumen, la canción quedaba más fuerte que su nivel
+  normalizado.
+
+### Cambiado
+
+- La notificación de reproducción permanece mientras la música está en
+  pausa, para poder reanudar en cualquier momento. Se quita al cerrar la app
+  desde recientes estando en pausa.
+
 ## [1.4.0] - 2026-10-19
 
 ### Añadido
