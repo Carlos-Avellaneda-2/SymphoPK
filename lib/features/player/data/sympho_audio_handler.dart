@@ -119,6 +119,21 @@ class SymphoAudioHandler extends BaseAudioHandler with SeekHandler {
   Future<void> configureAudioSession() async {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
+    // Al terminar una bajada temporal de volumen (p. ej. una notificación),
+    // `just_audio` duplica el volumen del reproductor, lo que desharía la
+    // normalización; se restaura el nivel de la canción.
+    _subscriptions.add(
+      session.interruptionEventStream
+          .where((e) => !e.begin && e.type == AudioInterruptionType.duck)
+          // En una microtarea, para actuar después de `just_audio` sea cual
+          // sea el orden de las suscripciones.
+          .listen((_) => scheduleMicrotask(_restoreLevel)),
+    );
+  }
+
+  void _restoreLevel() {
+    if (_fadingOut != null) return; // el fundido ya ajusta los volúmenes
+    unawaited(_player.setVolume(_level));
   }
 
   // ---------------------------------------------------------------------
